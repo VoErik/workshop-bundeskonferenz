@@ -1,0 +1,31 @@
+# fonts
+font.family: serif
+font.size: 10
+
+# axes
+axes.spines.top: False
+axes.spines.right: False
+axes.linewidth: 0.8
+axes.axisbelow: True
+axes.grid: True
+axes.grid.axis: y
+axes.prop_cycle: cycler('color', ['0072B2', 'D55E00', '009E73', 'CC79A7', 'E69F00', '56B4E9'])
+
+# grid
+grid.color: 0.9
+grid.linewidth: 0.6
+
+# ticks
+xtick.direction: out
+ytick.direction: out
+xtick.major.width: 0.8
+ytick.major.width: 0.8
+
+# lines
+lines.linewidth: 1.8
+lines.markersize: 4
+
+# figure
+figure.figsize: 6, 4
+figure.dpi: 150
+savefig.bbox: tight
