@@ -14,3 +14,31 @@ Die Zielgruppe sind primär Lehrkräfte der späten Mittelstufe bis Oberstufe f�
 - Die TN können die Entwicklung sprachbasierter Technologien von einfachen N-Grams bis hin zu modernen Transformern technisch nachvollziehen.
 - Die TN entwickeln ein grundlegendes Verständnis für die mathematischen Grundlagen hinter Sprachmodellen.
 - Die TN können Bezug zwischen Themen der natürlichen Sprachverarbeitung und den Lehrplaninhalten herstellen.
+
+Notizen:
+
+- Datensatz (TinyShakespeare)
+
+### Ngram
+
+Einfaches Beispiel Berechnung per Hand (ggf so aufbereiten dass es in Unterrichtseinheit übernommen werden kann)
+
+- co-occurence matrix (geht auf Wort/Tokenebene)
+- Sind N-gramme skalierbar
+Token vs Wort
+Vokabular als "Fachbegriff" einführen
+Anwendungsbeispiel: Autocomplete / Autocorrect
+Bezug zu LP: Wahrscheinlichkeiten / Stochastik
+
+### RNN / Embeddings
+
+NNs brauchen Vektoren :(
+Darum Wort zu Zahl :) -> Wie?
+
+### Transformer / Attention
+
+- HuggingFace (WS Johannes / Franzi)
+- Attention Mechanismus erklären
+- Autoregression
+- wie erinnert sich ein LM an etwas?
+
