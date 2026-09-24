@@ -1,0 +1,11 @@
+# Secrets — never commit
+.env
+
+# jetbrains
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.conda-env/
