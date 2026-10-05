@@ -100,6 +100,16 @@ def build_vocabulary(
     vocab = sorted(t for t, c in counts.items())
     return [BOS, EOS, UNK] + vocab
 
+def prepare_data(
+        dataset: str,
+        level: str,
+        separator: str = "\n\n",
+):
+    data = load_data(source=dataset)
+    chunks = [tokenize(c, level) for c in to_chunks(text=data, separator=separator) if c.strip()]
+    vocabulary = build_vocabulary([t for doc in chunks for t in doc])
+    return chunks, vocabulary
+
 def make_toy_dataset(
         path: str = "assets/toy.txt",
         vocabulary: str | list[str] = "abcde ",
