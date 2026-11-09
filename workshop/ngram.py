@@ -5,7 +5,7 @@ from collections import (
     Counter,
     defaultdict
 )
-from utils import (
+from workshop.utils import (
     BOS,
     EOS,
     UNK,
@@ -131,7 +131,7 @@ class NGram:
             print(text, end="", flush=True)
         for _ in range(length):
             tok = self._sample(history, rng, temperature)
-            if tok == EOS:  # end of a document: show a blank line, the next one starts fresh
+            if tok == EOS:
                 piece = "\n\n"
             else:
                 piece = _join_piece(history[-1] if history else None, tok, self.level)
