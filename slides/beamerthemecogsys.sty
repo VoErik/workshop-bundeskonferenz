@@ -1,0 +1,2019 @@
+%% beamerthemecogsys.sty
+%% Lecture theme of the Cognitive Systems Group, University of Bamberg.
+%%
+%% Engines: pdfLaTeX (recommended), LuaLaTeX, XeLaTeX.
+%% Hard requirements: beamer and graphicx. The theme does not use TikZ; all
+%% drawing is done with TeX boxes and rules. Everything else is optional and
+%% can be switched off with theme options, see README.md.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{beamerthemecogsys}[2026/10/06 v2.1 CogSys lecture theme]
+
+\RequirePackage{graphicx}
+
+%% ---------------------------------------------------------------------------
+%% Engine detection
+%% ---------------------------------------------------------------------------
+\newif\ifcogsys@pdftex
+\newif\ifcogsys@unicode % LuaTeX or XeTeX
+\ifdefined\directlua \cogsys@unicodetrue
+\else\ifdefined\XeTeXversion \cogsys@unicodetrue
+\else \cogsys@pdftextrue
+\fi\fi
+
+%% ---------------------------------------------------------------------------
+%% Options (key = value, via keyval)
+%% ---------------------------------------------------------------------------
+\newif\ifcogsys@pagenumbers  \cogsys@pagenumberstrue
+\newif\ifcogsys@pagetotal    \cogsys@pagetotaltrue
+\newif\ifcogsys@shortcourse  \cogsys@shortcoursefalse
+\newif\ifcogsys@sectionpages \cogsys@sectionpagestrue
+\newif\ifcogsys@listings     \cogsys@listingstrue
+\newif\ifcogsys@tracking     \cogsys@trackingtrue
+\newif\ifcogsys@monoscale    \cogsys@monoscaletrue
+\newif\ifcogsys@titlerelax   \cogsys@titlerelaxtrue
+\newdimen\cogsys@titlerelaxgap \cogsys@titlerelaxgap=2mm
+
+\def\cogsys@flag{none}
+\def\cogsys@font{atkinson}
+\def\cogsys@algorithms{pseudocode}
+\def\cogsys@unilogo{assets/uni.pdf}
+\def\cogsys@chairlogo{assets/cogsys.pdf}
+
+% \cogsys@choicekey{<key>}{<allowed values>}{<macro>}
+\def\cogsys@choicekey#1#2#3{%
+  \define@key{cogsys}{#1}{%
+    \in@{,##1,}{,#2,}%
+    \ifin@\def#3{##1}\else
+      \PackageWarning{beamerthemecogsys}{Invalid value `##1' for option `#1'}%
+    \fi}}
+% \cogsys@boolkey{<key>}: true/false, bare key means true
+\def\cogsys@boolkey#1{%
+  \define@key{cogsys}{#1}[true]{%
+    \@ifundefined{cogsys@#1##1}%
+      {\PackageWarning{beamerthemecogsys}{Invalid value `##1' for option `#1'}}%
+      {\csname cogsys@#1##1\endcsname}}}
+\cogsys@choicekey{flag}{pride,palestine,trans,none}\cogsys@flag
+\cogsys@choicekey{font}{atkinson,none}\cogsys@font
+\define@key{cogsys}{algorithms}[pseudocode]{%
+  \def\cogsys@tmp{#1}\def\cogsys@tmpb{true}%
+  \ifx\cogsys@tmp\cogsys@tmpb\def\cogsys@tmp{pseudocode}\fi
+  \expandafter\in@\expandafter{\expandafter,\cogsys@tmp,}{,pseudocode,pseudocodex,false,}%
+  \ifin@\let\cogsys@algorithms\cogsys@tmp\else
+    \PackageWarning{beamerthemecogsys}{Invalid value `#1' for option `algorithms'}%
+  \fi}
+\cogsys@boolkey{pagenumbers}
+\cogsys@boolkey{pagetotal}
+\cogsys@boolkey{shortcourse}
+\cogsys@boolkey{sectionpages}
+\cogsys@boolkey{listings}
+\cogsys@boolkey{tracking}
+\cogsys@boolkey{monoscale}
+\cogsys@boolkey{titlerelax}
+\define@key{cogsys}{titlerelaxgap}{\cogsys@titlerelaxgap=#1\relax}
+\define@key{cogsys}{unilogo}{\def\cogsys@unilogo{#1}}
+\define@key{cogsys}{chairlogo}{\def\cogsys@chairlogo{#1}}
+% Labels. A label set here wins over the language default, in any key order.
+% \cogsys@namekey{<name>}: keys `<name> name' and `<name>name'
+\def\cogsys@namekey#1{%
+  \define@key{cogsys}{#1 name}{\@namedef{cogsys@#1name}{##1}%
+    \@namedef{cogsys@#1name@set}{}}%
+  \define@key{cogsys}{#1name}{\setkeys{cogsys}{#1 name={##1}}}}
+\cogsys@namekey{lecture}
+\cogsys@namekey{essential}
+\cogsys@namekey{excursus}
+% language=en|ger: default labels (see "Language" at the end of the file).
+% Applied at the end of the theme, so all defaults it replaces exist.
+\def\cogsys@language{en}
+\define@key{cogsys}{language}{%
+  \in@{,#1,}{,en,ger,}%
+  \ifin@
+    \def\cogsys@language{#1}%
+    \ifdefined\cogsys@applylanguage\cogsys@applylanguage\fi
+  \else
+    \PackageWarning{beamerthemecogsys}{Invalid value `#1' for option `language'}%
+  \fi}
+% options of the previous theme version
+\define@key{cogsys}{shortlec}[]{\cogsys@shortcoursetrue}
+\define@key{cogsys}{suppress_pagenum}[]{\cogsys@pagenumbersfalse}
+
+% \cogsysset{<key=value list>}: like \setkeys, but unknown keys only warn
+\newcommand\cogsysset[1]{%
+  \@for\cogsys@kv:=#1\do{%
+    \ifx\cogsys@kv\@empty\else
+      \expandafter\cogsys@getkey\cogsys@kv=\@nil
+      \@ifundefined{KV@cogsys@\cogsys@key}%
+        {\PackageWarning{beamerthemecogsys}%
+          {Unknown theme option `\cogsys@key'}}%
+        {\edef\cogsys@tmp{\noexpand\setkeys{cogsys}%
+           {\unexpanded\expandafter{\cogsys@kv}}}\cogsys@tmp}%
+    \fi}}
+\def\cogsys@getkey#1=#2\@nil{\KV@@sp@def\cogsys@key{#1}}
+
+% Feed the package option list to \cogsysset.
+\DeclareOption*{}
+\ProcessOptions\relax
+\expandafter\let\expandafter\cogsys@optlist
+  \csname opt@\@currname.\@currext\endcsname
+\ifx\cogsys@optlist\relax\else
+  \expandafter\cogsysset\expandafter{\cogsys@optlist}
+\fi
+
+%% ---------------------------------------------------------------------------
+%% Colours
+%% ---------------------------------------------------------------------------
+\definecolor{cogsysink}{HTML}{141215}      % ink, matches the logos
+\definecolor{cogsysgrey444}{HTML}{444444}  % subtitles
+\definecolor{cogsysgrey555}{HTML}{555555}  % labels, footer, excursus title
+\definecolor{cogsysgrey777}{HTML}{777777}  % item markers
+\definecolor{cogsysgrey888}{HTML}{888888}  % algorithm line numbers
+\definecolor{cogsysgrey333}{HTML}{333333}  % footnotes
+\definecolor{cogsysrule}{HTML}{B5B5B2}     % algorithm indent lines
+\definecolor{cogsyspaper}{HTML}{FFFFFF}
+\definecolor{cogsysexcursus}{HTML}{F1F1EF} % excursus canvas
+% flags
+\definecolor{cogsysprideA}{HTML}{E40303}
+\definecolor{cogsysprideB}{HTML}{FF8C00}
+\definecolor{cogsysprideC}{HTML}{FFED00}
+\definecolor{cogsysprideD}{HTML}{008026}
+\definecolor{cogsysprideE}{HTML}{004CFF}
+\definecolor{cogsysprideF}{HTML}{732982}
+\definecolor{cogsyspalA}{HTML}{EE2A35}
+\definecolor{cogsyspalB}{HTML}{000000}
+\definecolor{cogsyspalC}{HTML}{FFFFFF}
+\definecolor{cogsyspalD}{HTML}{009736}
+\definecolor{cogsystransA}{HTML}{5BCEFA}
+\definecolor{cogsystransB}{HTML}{F5A9B8}
+
+% colours of the previous theme version, kept for existing slides
+\definecolor{ubblue}{RGB}{0,69,125}
+\definecolor{ubyellow}{RGB}{255,211,0}
+\definecolor{ubgreen}{RGB}{151,191,13}
+\definecolor{ubred}{RGB}{230,68,79}
+\definecolor{ubgrey}{RGB}{135,135,131}
+\definecolor{ubblack}{RGB}{26,23,27}
+
+\setbeamercolor{normal text}{fg=cogsysink, bg=cogsyspaper}
+\setbeamercolor{background canvas}{bg=cogsyspaper}
+\setbeamercolor{structure}{fg=cogsysink}
+\setbeamercolor{alerted text}{fg=cogsysink}
+\setbeamercolor{example text}{fg=cogsysink}
+\setbeamercolor{frametitle}{fg=cogsysink}
+\setbeamercolor{framesubtitle}{fg=cogsysgrey444}
+\setbeamercolor{title}{fg=cogsysink}
+\setbeamercolor{subtitle}{fg=cogsysgrey444}
+\setbeamercolor{author}{fg=cogsysgrey555}
+\setbeamercolor{date}{fg=cogsysgrey555}
+\setbeamercolor{label line}{fg=cogsysgrey555}
+\setbeamercolor{footline}{fg=cogsysgrey555}
+\setbeamercolor{page number in head/foot}{fg=cogsysink}
+\setbeamercolor{item}{fg=cogsysgrey777}
+\setbeamercolor{subitem}{fg=cogsysgrey777}
+\setbeamercolor{subsubitem}{fg=cogsysgrey777}
+\setbeamercolor{footnote}{fg=cogsysgrey333}
+\setbeamercolor{footnote mark}{fg=cogsysink}
+\setbeamercolor{section in toc}{fg=cogsysink}
+\setbeamercolor{subsection in toc}{fg=cogsysgrey444}
+\setbeamercolor{caption name}{fg=cogsysgrey555}
+\setbeamercolor{caption}{fg=cogsysgrey444}
+\setbeamercolor{bibliography entry author}{fg=cogsysink}
+\setbeamercolor{bibliography entry title}{fg=cogsysink}
+\setbeamercolor{bibliography entry location}{fg=cogsysgrey444}
+\setbeamercolor{bibliography entry note}{fg=cogsysgrey444}
+\setbeamercolor{qed symbol}{fg=cogsysink}
+\setbeamercolor{block title}{fg=cogsysink}
+\setbeamercolor{block body}{fg=cogsysink}
+
+%% ---------------------------------------------------------------------------
+%% Fonts
+%% ---------------------------------------------------------------------------
+% Atkinson Hyperlegible Next + Mono, as shipped by the CTAN package
+% `atkinson' (TeX Live 2025+, MiKTeX). pdfLaTeX gets the Type 1 version,
+% LuaLaTeX/XeLaTeX the OpenType version. If the package (or the 2025 version
+% containing Next and Mono) is missing, the theme falls back to the default
+% beamer fonts with a warning.
+\newif\ifcogsys@atkinson
+\def\cogsys@str@none{none}
+\def\cogsys@ttscale{1000} % mono size relative to the requested size, in 1/1000
+\def\cogsys@medium{\mdseries}
+\ifx\cogsys@font\cogsys@str@none\else
+  % The 2025 `atkinson' package ships Next + Mono as Type 1 (with .fd files)
+  % and OpenType; the .fd file is visible to \IfFileExists on every engine.
+  \IfFileExists{T1atkinsnmono-TLF.fd}{\cogsys@atkinsontrue}{}%
+  \ifcogsys@atkinson\else
+    \PackageWarningNoLine{beamerthemecogsys}{%
+      Atkinson Hyperlegible Next/Mono not found.\MessageBreak
+      Install the `atkinson' package (2025 or newer),\MessageBreak
+      e.g. `tlmgr install atkinson'. Falling back to\MessageBreak
+      the default fonts}%
+  \fi
+\fi
+\ifcogsys@atkinson
+  \ifcogsys@pdftex
+    \RequirePackage[T1]{fontenc}
+    \ifcogsys@monoscale
+      % Mono is wider than Next; scale it so inline code sits in running text.
+      \def\atkinsnmono@scale{0.9}\def\cogsys@ttscale{900}
+    \fi
+    \RequirePackage{atkinson}
+    \def\cogsys@medium{\fontseries{medium}\selectfont}
+  \else
+    \RequirePackage[nomono]{atkinson}
+    \ifcogsys@monoscale\def\cogsys@ttscale{900}\fi
+    \setmonofont[Extension = .otf,
+                 Scale = \fpeval{\cogsys@ttscale/1000},
+                 UprightFont = *-Regular, ItalicFont = *-RegularItalic,
+                 BoldFont = *-Bold, BoldItalicFont = *-BoldItalic]
+                {AtkinsonHyperlegibleMono}
+    \newfontface\cogsys@mediumface[Extension = .otf]{AtkinsonHyperlegibleNext-Medium}
+    \def\cogsys@medium{\cogsys@mediumface}
+  \fi
+\fi
+
+\newdimen\cogsys@dima
+\newdimen\cogsys@dimb
+\newdimen\cogsys@dimc
+\newbox\cogsys@box
+
+% \cogsys@fs{<size in pt>}{<leading factor>}: set size, leading = factor * size
+\def\cogsys@fs#1#2{%
+  \cogsys@dima=#1pt\relax
+  \cogsys@dimb=#2\cogsys@dima
+  \fontsize{\strip@pt\cogsys@dima}{\the\cogsys@dimb}\selectfont}
+% \cogsys@mono{<size>}{<leading factor>}: mono at exactly <size> on the page
+\def\cogsys@mono#1#2{%
+  \ttfamily
+  \cogsys@dima=#1pt\relax
+  \cogsys@dimb=#2\cogsys@dima
+  \cogsys@dima=\dimexpr\cogsys@dima*1000/\cogsys@ttscale\relax
+  \fontsize{\strip@pt\cogsys@dima}{\the\cogsys@dimb}\selectfont}
+
+% Negative tracking for display type, in 1/1000 em (pdfTeX and fontspec only)
+\def\cogsys@track#1{%
+  \ifcogsys@tracking
+    \ifcogsys@pdftex
+      \expandafter\ifx\csname cogsys@ls@\fontname\font @#1\endcsname\relax
+        \letterspacefont\cogsys@lsfont\font #1\relax
+        \expandafter\global\expandafter\let
+          \csname cogsys@ls@\fontname\font @#1\endcsname\cogsys@lsfont
+      \fi
+      \csname cogsys@ls@\fontname\font @#1\endcsname
+    \else\ifcogsys@atkinson
+      \addfontfeatures{LetterSpace=\fpeval{#1/10}}%
+    \fi\fi
+  \fi}
+
+\usefonttheme{professionalfonts}% keep math fonts as loaded
+\setbeamerfont{normal text}{}
+\setbeamerfont{title}{size=\cogsys@fs{26.93}{1.0}, series=\bfseries}
+\setbeamerfont{subtitle}{size=\cogsys@fs{12.05}{1.25}}
+\setbeamerfont{frametitle}{size=\cogsys@fs{19.13}{1.0}, series=\bfseries}
+\setbeamerfont{framesubtitle}{size=\cogsys@fs{10.63}{1.25}}
+\setbeamerfont{section title}{size=\cogsys@fs{26.93}{1.0}, series=\bfseries}
+\setbeamerfont{label line}{size=\cogsys@mono{6.73}{1.2}, series=\mdseries}
+\setbeamerfont{section number}{size=\cogsys@mono{7.80}{1.2}, series=\mdseries}
+\setbeamerfont{author}{size=\cogsys@mono{7.09}{1.2}, series=\mdseries}
+\setbeamerfont{footline}{size=\cogsys@mono{5.67}{1.2}, series=\mdseries}
+\setbeamerfont{page number in head/foot}{size=\cogsys@mono{9.21}{1.2}, series=\bfseries}
+\setbeamerfont{block title}{size=\cogsys@mono{6.38}{1.2}, series=\bfseries}
+\setbeamerfont{block body}{size=\cogsys@fs{8.86}{1.45}}
+% list markers: 7.80 pt at the 10 pt body, scaled with the list text (see Lists)
+\setbeamerfont{item}{%
+  size=\cogsys@mono{\strip@pt\dimexpr\cogsys@listsize pt*78/100\relax}{1.0},
+  series=\mdseries}
+\setbeamerfont{footnote}{size=\cogsys@fs{6.02}{1.4}}
+\setbeamerfont{footnote mark}{size=\cogsys@mono{5.67}{1.0}, series=\bfseries}
+\setbeamerfont{footnote mark in footnote}{size=\cogsys@mono{5.31}{1.0}, series=\bfseries}
+\setbeamerfont{algorithm}{size=\cogsys@fs{8.86}{1.5}}
+\setbeamerfont{caption}{size=\cogsys@fs{8.86}{1.4}}
+\setbeamerfont{caption name}{size=\cogsys@mono{6.38}{1.2}, series=\bfseries}
+\setbeamerfont{alerted text}{series=\bfseries}
+\setbeamerfont{description item}{series=\bfseries}
+
+% Body text: designed for the 10pt class option (9.9 pt, leading 1.45).
+% We keep the size of the class option but always use the 1.45 leading.
+\let\cogsys@orig@normalsize\normalsize
+\renewcommand\normalsize{%
+  \cogsys@orig@normalsize
+  \cogsys@dima=\f@size pt\relax
+  \cogsys@dimb=1.44\cogsys@dima
+  \fontsize{\f@size}{\the\cogsys@dimb}\selectfont}
+\AtBeginDocument{%
+  \begingroup\cogsys@orig@normalsize
+    \ifdim\f@size pt=10pt\else
+      \PackageInfo{beamerthemecogsys}{The theme is designed for the 10pt
+        class option;\MessageBreak this document uses \f@size pt}%
+    \fi
+  \endgroup}
+
+%% ---------------------------------------------------------------------------
+%% Metadata
+%% ---------------------------------------------------------------------------
+% \course[<short>]{<long>}  e.g. \course[OS]{Operating Systems}
+% \semester{<term>}        e.g. \semester{WS 2026/27}
+% \lecturenumber{<n>}      e.g. \lecturenumber{4}  -> LECTURE 04
+\def\cogsys@course{}\def\cogsys@shortcourse{}
+\def\cogsys@semester{}\def\cogsys@lecturenumber{}
+\newcommand\course[2][]{%
+  \def\cogsys@course{#2}%
+  \if\relax\detokenize{#1}\relax\def\cogsys@shortcourse{#2}%
+  \else\def\cogsys@shortcourse{#1}\fi}
+\newcommand\semester[1]{\def\cogsys@semester{#1}}
+\newcommand\lecturenumber[1]{%
+  \def\cogsys@lecturenumber{#1}\cogsys@padifnumber{#1}}
+% Both fall back to beamer's \lecture[<short>]{<long>}{<label>} (as used by
+% the previous theme version). Expandable, so \MakeUppercase works on them.
+\newcommand\insertcourse{%
+  \ifx\cogsys@course\@empty
+    \ifx\beamer@lecturename\@undefined\else\beamer@lecturename\fi
+  \else\cogsys@course\fi}
+\newcommand\insertshortcourse{%
+  \ifx\cogsys@shortcourse\@empty
+    \ifx\beamer@shortlecturename\@undefined\else\beamer@shortlecturename\fi
+  \else\cogsys@shortcourse\fi}
+\newcommand\insertsemester{\cogsys@semester}
+\let\cogsys@beamer@lecturenumber\insertlecturenumber
+\renewcommand\insertlecturenumber{%
+  \ifx\cogsys@lecturenumber\@empty\cogsys@beamer@lecturenumber
+  \else\cogsys@lecturenumberpadded\fi}
+
+% Zero-pad a number to two digits (expandable; argument must be a number).
+\def\cogsys@twodigits#1{\ifnum#1<10 0\fi\number#1}
+% \lecturenumber accepts anything; only plain numbers get padded.
+\def\cogsys@padifnumber#1{%
+  \begingroup
+  \afterassignment\cogsys@padifnumber@check
+  \count@=0#1 \cogsys@padifnumber@end{#1}}
+\def\cogsys@padifnumber@check#1\cogsys@padifnumber@end#2{%
+  \if\relax\detokenize{#1}\relax
+    \xdef\cogsys@lecturenumberpadded{\cogsys@twodigits{\count@}}%
+  \else
+    \gdef\cogsys@lecturenumberpadded{#2}%
+  \fi
+  \endgroup}
+
+%% ---------------------------------------------------------------------------
+%% Geometry
+%% ---------------------------------------------------------------------------
+% Reference paper: 160 x 90 mm (aspectratio=169). Everything right-aligned is
+% measured from \paperwidth, so 4:3 and other ratios still work.
+\setbeamersize{text margin left=10mm, text margin right=10mm}
+\newdimen\cogsys@footheight      \cogsys@footheight=9.45mm % footnotes end 10 mm above the edge
+\newdimen\cogsys@headerright     \cogsys@headerright=27.5mm % clears the logo
+
+% Frames are top-aligned by default (use [c] per frame to centre).
+\beamer@centeredfalse
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{headline}{}
+
+%% ---------------------------------------------------------------------------
+%% Drawing primitives (plain TeX boxes and rules, no TikZ)
+%% ---------------------------------------------------------------------------
+% \cogsys@canvas{<width>}{<height>}{<items>}: a box of the given size whose
+% items are placed with \cogsys@put relative to its top-left corner.
+% \cogsys@put{<x>}{<y>}{<anchor>}{<content>}: <x>, <y> measured from the
+% top-left corner (y downwards). Anchors: bl, br (baseline left/right),
+% tl, tr (top left/right), c (centre).
+\newbox\cogsys@putbox
+\newdimen\cogsys@putx
+\newdimen\cogsys@puty
+\long\def\cogsys@canvas#1#2#3{%
+  \vbox to#2{\offinterlineskip\parskip\z@\hrule\@width#1\@height\z@
+    #3\vss}}
+\long\def\cogsys@put#1#2#3#4{%
+  \setbox\cogsys@putbox\hbox{\color@begingroup#4\color@endgroup}%
+  \cogsys@putx=\dimexpr#1\relax
+  \cogsys@puty=\dimexpr#2\relax
+  \csname cogsys@anchor@#3\endcsname
+  \nointerlineskip
+  \vbox to\z@{\kern\cogsys@puty
+    \hbox to\z@{\kern\cogsys@putx\box\cogsys@putbox\hss}\vss}}
+\def\cogsys@anchor@tl{}
+\def\cogsys@anchor@tr{\advance\cogsys@putx-\wd\cogsys@putbox}
+\def\cogsys@anchor@bl{\advance\cogsys@puty-\ht\cogsys@putbox}
+\def\cogsys@anchor@br{\cogsys@anchor@bl\cogsys@anchor@tr}
+\def\cogsys@anchor@c{%
+  \advance\cogsys@putx-.5\wd\cogsys@putbox
+  \advance\cogsys@puty-.5\dimexpr\ht\cogsys@putbox+\dp\cogsys@putbox\relax}
+
+% \cogsys@rect{<width>}{<height>}{<colour>}: filled rectangle on the baseline
+\def\cogsys@rect#1#2#3{%
+  {\color{#3}\vrule\@width#1\@height#2\@depth\z@}}
+
+% Tag box used by ESSENTIAL / EXCURSUS and block tabs. The box is sized
+% like the CSS box of the reference: <above> from the top edge to the cap
+% height, <below> from the baseline to the bottom edge, <h pad> from the
+% side edges to the text (all to the outer edges; borders are drawn inside).
+% \cogsys@tagbox{<text>}{<fill colour or empty>}{<none|solid|dashed>}%
+%               {<above>}{<below>}{<h pad>}
+\newbox\cogsys@tagtext
+\newdimen\cogsys@tagw \newdimen\cogsys@tagh \newdimen\cogsys@tagd
+\newdimen\cogsys@tagrule \cogsys@tagrule=0.25mm
+\def\cogsys@tagbox#1#2#3#4#5#6{%
+  \setbox\cogsys@tagtext\hbox{\color@begingroup#1\color@endgroup}%
+  \cogsys@tagh=\dimexpr\fontcharht\font`H+#4\relax
+  \cogsys@tagd=\dimexpr#5\relax
+  \cogsys@tagw=\dimexpr\wd\cogsys@tagtext+#6+#6\relax
+  \hbox{%
+    \if\relax\detokenize{#2}\relax\else
+      \rlap{\color{#2}\vrule\@width\cogsys@tagw\@height\cogsys@tagh
+            \@depth\cogsys@tagd}%
+    \fi
+    \csname cogsys@border@#3\endcsname
+    \kern#6\box\cogsys@tagtext\kern#6}}
+\def\cogsys@border@none{}
+\def\cogsys@border@solid{%
+  \rlap{\color{cogsysink}\lower\cogsys@tagd\vbox{\offinterlineskip
+    \hrule\@height\cogsys@tagrule\@width\cogsys@tagw
+    \hbox to\cogsys@tagw{\vrule\@width\cogsys@tagrule
+        \@height\dimexpr\cogsys@tagh+\cogsys@tagd-2\cogsys@tagrule\relax
+      \hfil\vrule\@width\cogsys@tagrule}%
+    \hrule\@height\cogsys@tagrule\@width\cogsys@tagw}}}
+% dashes: 0.5 mm on, 0.25 mm off
+\def\cogsys@hdash{\hbox to\cogsys@tagw{%
+  \cleaders\hbox to0.75mm{\hss\vrule\@width0.5mm\@height\cogsys@tagrule\hss}\hfil}}
+\def\cogsys@vdash{\vbox to\dimexpr\cogsys@tagh+\cogsys@tagd-2\cogsys@tagrule\relax{%
+  \cleaders\vbox to0.75mm{\vss\hrule\@width\cogsys@tagrule\@height0.5mm\vss}\vfil}}
+\def\cogsys@border@dashed{%
+  \rlap{\color{cogsysink}\lower\cogsys@tagd\vbox{\offinterlineskip
+    \cogsys@hdash
+    \hbox to\cogsys@tagw{\cogsys@vdash\hfil\cogsys@vdash}%
+    \cogsys@hdash}}}
+
+%% ---------------------------------------------------------------------------
+%% Flag underline
+%% ---------------------------------------------------------------------------
+% \cogsys@flagbar{<width>}{<height>}: a box of that size on the baseline
+\def\cogsys@flagbar#1#2{%
+  \def\cogsys@tmp{pride}%
+  \ifx\cogsys@flag\cogsys@tmp
+    \cogsys@stripes{#1}{#2}{cogsysprideA,cogsysprideB,cogsysprideC,%
+                            cogsysprideD,cogsysprideE,cogsysprideF}{6}%
+  \else
+    \def\cogsys@tmp{palestine}%
+    \ifx\cogsys@flag\cogsys@tmp
+      \cogsys@stripes{#1}{#2}{cogsyspalA,cogsyspalB,cogsyspalC,cogsyspalD}{4}%
+    \else
+      \def\cogsys@tmp{trans}%
+      \ifx\cogsys@flag\cogsys@tmp
+        \cogsys@stripes{#1}{#2}{cogsystransA,cogsystransB,cogsyspaper,%
+                                cogsystransB,cogsystransA}{5}%
+      \else
+        \hbox{\cogsys@rect{#1}{#2}{cogsysink}}%
+      \fi
+    \fi
+  \fi}
+% equal segments; the last one takes the rounding remainder
+\def\cogsys@stripes#1#2#3#4{%
+  \hbox{\cogsys@dimc=\dimexpr(#1)/#4\relax
+    \count@=\z@
+    \@for\cogsys@c:=#3\do{%
+      \advance\count@\@ne
+      \ifnum\count@=#4
+        \cogsys@dimc=\dimexpr#1-\cogsys@dimc*(#4-1)\relax
+      \fi
+      \cogsys@rect{\cogsys@dimc}{#2}{\cogsys@c}}}}
+
+%% ---------------------------------------------------------------------------
+%% Frame kinds: essential / excursus
+%% ---------------------------------------------------------------------------
+% \begin{frame}[essential]{...}  important slide, solid bar + ESSENTIAL tag
+% \begin{frame}[excursus]{...}   optional slide, hatched bar + EXCURSUS tag
+\def\cogsys@framekind{normal}
+% \cogsys@essentialname, \cogsys@excursusname: set by the language option
+\define@key{beamerframe}{essential}[true]{\def\cogsys@framekind{essential}}
+\define@key{beamerframe}{excursus}[true]{\def\cogsys@framekind{excursus}}
+% \begin{frame}[norelax]{...}   keep the full gap below the title (see
+% Relaxed title gap)
+\newif\ifcogsys@norelax
+\define@key{beamerframe}{norelax}[true]{\cogsys@norelaxtrue}
+% every frame starts as a normal one (also fragile frames)
+\pretocmd\beamer@@@@frame{\def\cogsys@framekind{normal}\cogsys@norelaxfalse}{}%
+  {\PackageWarningNoLine{beamerthemecogsys}{Could not patch beamer's frame}}
+% excursus colours
+\setbeamercolor{excursus canvas}{bg=cogsysexcursus}
+\setbeamercolor{excursus frametitle}{fg=cogsysgrey555}
+% \cogsys@canvascolor: colour `bg' = canvas colour of the current frame
+\def\cogsys@canvascolor{%
+  \usebeamercolor{background canvas}%
+  \cogsys@ifkind{excursus}{\usebeamercolor{excursus canvas}}}
+\setbeamertemplate{background canvas}{%
+  \cogsys@canvascolor\color{bg}\vrule width\paperwidth height\paperheight}
+% \cogsys@ifkind{<kind>}{<code>}
+\def\cogsys@ifkind#1#2{\def\cogsys@tmp{#1}%
+  \ifx\cogsys@tmp\cogsys@framekind\expandafter\@firstofone
+  \else\expandafter\@gobble\fi{#2}}
+
+%% ---------------------------------------------------------------------------
+%% Page kinds: the title and section pages are drawn on the canvas
+%% ---------------------------------------------------------------------------
+\def\cogsys@pagekind{frame}
+\AddToHook{env/beamer@framepauses/begin}{%
+  \gdef\cogsys@pagekind{frame}%
+  \global\cogsys@bodytoptrue
+  \global\cogsys@afterblockfalse
+  \setcounter{footnote}{0}%
+  % references never carry over (zoomed slides are not flushed)
+  \global\let\cogsys@bibkeys\@empty
+  \global\let\cogsys@titlebibkeys\@empty
+  \global\c@cogsys@alginslide=0\relax
+  % see Relaxed title gap
+  \global\cogsys@relaxapplied=\z@ \global\cogsys@relaxlimit=\z@
+  \global\cogsys@titlerule=\z@
+  \global\cogsys@colsfirstfalse \global\cogsys@colinktop=\maxdimen
+  \global\cogsys@topoverhang=\z@ \global\cogsys@tabattopfalse}
+\newcounter{cogsys@alginslide}
+
+%% ---------------------------------------------------------------------------
+%% Background: logo, edge marker, title and section page
+%% ---------------------------------------------------------------------------
+\setbeamertemplate{background}{%
+  \csname cogsys@prepare@\cogsys@pagekind\endcsname
+  \cogsys@canvas{\paperwidth}{\paperheight}{%
+    % university logo: 13 x 13 mm, 5.5 mm from top, 6.5 mm from right
+    \IfFileExists{\cogsys@unilogo}{%
+      \cogsys@put{\paperwidth-6.5mm}{5.5mm}{tr}%
+        {\includegraphics[width=13mm,height=13mm]{\cogsys@unilogo}}}{}%
+    % edge marker
+    \cogsys@ifkind{essential}%
+      {\cogsys@put{\z@}{\z@}{tl}{\cogsys@rect{2mm}{\paperheight}{cogsysink}}}%
+    \cogsys@ifkind{excursus}{\cogsys@put{\z@}{\z@}{tl}{\cogsys@hatchbar}}%
+    \csname cogsys@draw@\cogsys@pagekind\endcsname}}
+
+\def\cogsys@draw@frame{}
+
+% Hatched edge marker, 2 mm wide: 45 degree lines (top left to bottom right),
+% 0.375 mm wide, 1.25 mm apart. Each line spans the strip exactly; the
+% lines are repeated down the page with \cleaders.
+% \cogsys@hatch{<height>} draws the strip at any height (excursus blocks).
+\def\cogsys@hatchbar{\cogsys@hatch\paperheight}
+\def\cogsys@hatch#1{%
+  \vbox to#1{\offinterlineskip
+    \cleaders\vbox to1.7678mm{\vss
+      \hbox to2mm{\hss\smash{\rotatebox[origin=c]{-45}{%
+        \color{cogsysink}\vrule\@width2.8284mm\@height0.1875mm\@depth0.1875mm}}%
+      \hss}\vss}\vfill}}
+
+% Mono caps label items, separated by 3.5 mm
+\def\cogsys@labelitem#1{%
+  \ifcogsys@firstlabel\global\cogsys@firstlabelfalse\else\hskip3.5mm\fi
+  \MakeUppercase{#1}}
+\newif\ifcogsys@firstlabel
+
+% Multi-line text measured by baselines: \cogsys@vtop{<setup>}{<text>}
+% leaves the box in \cogsys@box and the distance between its first and last
+% baseline in \cogsys@dimb.
+\def\cogsys@vtop#1#2{%
+  \setbox\cogsys@box\vbox{\hsize=\dimexpr\paperwidth-20mm\relax
+    \color@begingroup\noindent#1\raggedright#2\par\color@endgroup}%
+  \cogsys@dimb=\ht\cogsys@box
+  \setbox\cogsys@box\vtop{\hsize=\dimexpr\paperwidth-20mm\relax
+    \color@begingroup\noindent#1\raggedright#2\par\color@endgroup}%
+  \advance\cogsys@dimb-\ht\cogsys@box}
+
+\newbox\cogsys@titlebox \newdimen\cogsys@titleextra
+\newbox\cogsys@subbox   \newdimen\cogsys@subextra
+\newbox\cogsys@authbox
+\def\cogsys@prepare@frame{}
+\def\cogsys@prepare@title{%
+  \cogsys@vtop{\usebeamerfont{title}\usebeamercolor[fg]{title}\cogsys@track{-20}}%
+              {\inserttitle}%
+  \setbox\cogsys@titlebox\box\cogsys@box \cogsys@titleextra=\cogsys@dimb
+  \cogsys@vtop{\usebeamerfont{subtitle}\usebeamercolor[fg]{subtitle}\cogsys@medium}%
+              {\insertsubtitle}%
+  \setbox\cogsys@subbox\box\cogsys@box \cogsys@subextra=\cogsys@dimb
+  \cogsys@vtop{\usebeamerfont{author}\usebeamercolor[fg]{author}}{\insertauthor}%
+  \setbox\cogsys@authbox\box\cogsys@box}
+\def\cogsys@prepare@section{%
+  \cogsys@vtop{\usebeamerfont{section title}\usebeamercolor[fg]{frametitle}%
+               \cogsys@track{-20}}{\secname}% full title; the short one is for the label line
+  \setbox\cogsys@titlebox\box\cogsys@box \cogsys@titleextra=\cogsys@dimb}
+
+\def\cogsys@draw@title{%
+  % label line: course + term, lecture number, date
+  \cogsys@put{10mm}{9.86mm}{bl}{%
+    \usebeamerfont{label line}\usebeamercolor[fg]{label line}%
+    \global\cogsys@firstlabeltrue
+    \edef\cogsys@tmp{\insertshortcourse\ifx\cogsys@semester\@empty\else\ \cogsys@semester\fi}%
+    \ifx\cogsys@tmp\@empty\else\cogsys@labelitem{\cogsys@tmp}\fi
+    \ifx\cogsys@lecturenumber\@empty\else
+      \cogsys@labelitem{\cogsys@lecturename\ \insertlecturenumber}\fi
+    \ifx\insertdate\@empty\else\cogsys@labelitem{\insertdate}\fi}%
+  % title: last baseline 47.5 mm from the top for a one-line title and
+  % subtitle; extra lines push the block upwards, keeping the bottom fixed
+  \cogsys@dima=\dimexpr47.5mm-\cogsys@titleextra\relax
+  \ifx\insertsubtitle\@empty\else\advance\cogsys@dima-\cogsys@subextra\fi
+  \cogsys@put{10mm}{\cogsys@dima}{bl}{\copy\cogsys@titlebox}%
+  \advance\cogsys@dima\cogsys@titleextra
+  % flag underline 14 x 1 mm
+  \advance\cogsys@dima4.94mm
+  \cogsys@put{10mm}{\cogsys@dima}{tl}{\cogsys@flagbar{14mm}{1mm}}%
+  \advance\cogsys@dima1mm
+  \ifx\insertsubtitle\@empty\else
+    \advance\cogsys@dima7.25mm
+    \cogsys@put{10mm}{\cogsys@dima}{bl}{\copy\cogsys@subbox}%
+    \advance\cogsys@dima\cogsys@subextra
+    \advance\cogsys@dima1.44mm
+  \fi
+  \ifx\insertauthor\@empty\else
+    \advance\cogsys@dima7.25mm
+    \cogsys@put{10mm}{\cogsys@dima}{bl}{\copy\cogsys@authbox}%
+  \fi
+}
+
+\def\cogsys@draw@section{%
+  \cogsys@put{10mm}{40.19mm}{bl}{%
+    \usebeamerfont{section number}\usebeamercolor[fg]{label line}%
+    \S\insertsectionnumber}%
+  \cogsys@dima=51.06mm
+  \cogsys@put{10mm}{\cogsys@dima}{bl}{\copy\cogsys@titlebox}%
+  \advance\cogsys@dima\cogsys@titleextra
+  \advance\cogsys@dima4.94mm
+  \cogsys@put{10mm}{\cogsys@dima}{tl}{\cogsys@flagbar{14mm}{1mm}}%
+}
+
+\setbeamertemplate{title page}{\gdef\cogsys@pagekind{title}}
+\setbeamertemplate{section page}{\gdef\cogsys@pagekind{section}}
+% Section pages: on or off for the whole document (option sectionpages), and
+% per section with the optional argument of \section:
+%   \section[noframe]{Name}  no section page for this section
+%   \section[frame]{Name}    section page even if sectionpages=false
+% (any other optional argument is the short title, as usual)
+\newif\ifcogsys@thissectionpage
+\def\cogsys@str@noframe{noframe}
+\def\cogsys@str@frame{frame}
+\let\cogsys@orig@beamer@section\beamer@section
+\long\def\beamer@section[#1]#2{%
+  \ifcogsys@sectionpages
+    \global\cogsys@thissectionpagetrue
+  \else
+    \global\cogsys@thissectionpagefalse
+  \fi
+  \def\cogsys@tmp{#1}%
+  \ifx\cogsys@tmp\cogsys@str@noframe
+    \global\cogsys@thissectionpagefalse
+    \def\cogsys@tmp{\cogsys@orig@beamer@section[#2]{#2}}%
+  \else\ifx\cogsys@tmp\cogsys@str@frame
+    \global\cogsys@thissectionpagetrue
+    \def\cogsys@tmp{\cogsys@orig@beamer@section[#2]{#2}}%
+  \else
+    \def\cogsys@tmp{\cogsys@orig@beamer@section[#1]{#2}}%
+  \fi\fi
+  \cogsys@tmp}
+\def\cogsys@sectionframe{\begin{frame}\sectionpage\end{frame}}
+\AtBeginSection{%
+  \ifcogsys@thissectionpage\expandafter\cogsys@sectionframe\fi}
+% The slide of the first \tableofcontents, the target of the section label
+% above frame titles. Written to the aux file so earlier frames know it too.
+\newif\ifcogsys@tocmarked
+\def\cogsys@marktoc{%
+  \ifcogsys@tocmarked\else
+    \global\cogsys@tocmarkedtrue
+    \xdef\cogsys@tocpage{\the\c@page}%
+    \immediate\write\@auxout{\gdef\string\cogsys@tocpage{\the\c@page}}%
+  \fi}
+\let\cogsys@orig@tableofcontents\tableofcontents
+\def\tableofcontents{\cogsys@marktoc\cogsys@orig@tableofcontents}
+
+%% ---------------------------------------------------------------------------
+%% Footer: author · course | chair logo | page / total
+%% ---------------------------------------------------------------------------
+\def\cogsys@footercourse{%
+  \ifcogsys@shortcourse\insertshortcourse\else\insertcourse\fi}
+\setbeamertemplate{footline}{%
+  \cogsys@canvas{\paperwidth}{\cogsys@footheight}{%
+    % left: author and course (not on the title page)
+    \def\cogsys@tmp{title}%
+    \ifx\cogsys@pagekind\cogsys@tmp\else
+      \cogsys@put{10mm}{\cogsys@footheight-3.56mm}{bl}{%
+        \usebeamerfont{footline}\usebeamercolor[fg]{footline}%
+        \MakeUppercase{\beamer@shortauthor}%
+        \setbox\cogsys@box\hbox{\color@begingroup\cogsys@footercourse\color@endgroup}%
+        \ifdim\wd\cogsys@box>0pt
+          \setbox\cogsys@box\hbox{\color@begingroup\insertshortauthor\color@endgroup}%
+          \ifdim\wd\cogsys@box>0pt \ \textperiodcentered\ \fi
+          \MakeUppercase{\cogsys@footercourse}%
+        \fi}%
+    \fi
+    % centre: chair logo, 3 mm tall
+    \IfFileExists{\cogsys@chairlogo}{%
+      \cogsys@put{(\paperwidth+6mm)/2}{\cogsys@footheight-4.25mm}{c}%
+        {\includegraphics[height=3mm]{\cogsys@chairlogo}}}{}%
+    % right: page / total
+    \ifcogsys@pagenumbers
+      \cogsys@put{\paperwidth-4mm}{\cogsys@footheight-3.12mm}{br}{%
+        {\usebeamerfont{page number in head/foot}%
+         \usebeamercolor[fg]{page number in head/foot}%
+         \cogsys@twodigits{\insertframenumber}}%
+        \ifcogsys@pagetotal
+          \hskip1.5mm{\usebeamerfont{footline}\usebeamercolor[fg]{footline}%
+            /\ \cogsys@twodigits{\inserttotalframenumber}}%
+        \fi}%
+    \fi}}
+
+%% ---------------------------------------------------------------------------
+%% Frame title
+%% ---------------------------------------------------------------------------
+% Label line (section) -> title -> [subtitle] -> flag underline. The title is
+% kept on one line and shrinks to fit the space left of the logo.
+\newdimen\cogsys@titlewidth
+\newdimen\cogsys@bodytop
+\def\cogsys@titlesize{19.13}
+\def\cogsys@subtitlesize{10.63}
+
+% \cogsys@fitline{<font setup>}{<size>}{<text>}{<max width>}: one-line box
+\def\cogsys@fitline#1#2#3#4{%
+  \setbox\cogsys@box\hbox{\color@begingroup
+    #1\cogsys@fs{#2}{1.0}\cogsys@track{-15}#3\color@endgroup}%
+  \ifdim\wd\cogsys@box>#4\relax
+    \cogsys@dimc=\dimexpr#2pt*#4/\wd\cogsys@box\relax
+    \setbox\cogsys@box\hbox{\color@begingroup
+      #1\cogsys@fs{\strip@pt\cogsys@dimc}{1.0}\cogsys@track{-15}#3\color@endgroup}%
+  \fi
+  \box\cogsys@box}
+
+\def\cogsys@sectionlabel{%
+  \ifnum\c@section>0
+    % links to the table of contents, else to the first slide of the section;
+    % beamer's own link is dropped, \MakeUppercase would mangle its target
+    \hyperlink{Navigation\ifdefined\cogsys@tocpage\cogsys@tocpage
+               \else\the\beamer@sectionstartpage\fi}{%
+      \S\insertsectionnumber\ %
+      {\let\hyperlink\@secondoftwo\MakeUppercase{\insertsectionhead}}}%
+  \fi}
+
+\setbeamertemplate{frametitle}{%
+  \cogsys@titlebibtrue % \framebib in the title: list these entries first
+  \cogsys@titlewidth=\dimexpr\paperwidth-10mm-\cogsys@headerright\relax
+  \ifx\insertframesubtitle\@empty
+    \cogsys@bodytop=26mm \global\cogsys@titlerule=21.56mm
+  \else
+    \cogsys@bodytop=33mm \global\cogsys@titlerule=27.44mm
+  \fi
+  \nointerlineskip
+  \hbox{\cogsys@canvas{1pt}{\cogsys@bodytop}{%
+    % label line
+    \cogsys@put{\z@}{8.37mm}{bl}{%
+      \usebeamerfont{label line}\usebeamercolor[fg]{label line}%
+      \cogsys@ifkind{essential}{%
+        {\color{cogsyspaper}\bfseries
+         \cogsys@tagbox{\MakeUppercase{\cogsys@essentialname}}%
+           {cogsysink}{none}{0.94mm}{1.0mm}{1.5mm}}\hskip2mm}%
+      \cogsys@ifkind{excursus}{%
+        {\color{cogsysink}\bfseries
+         \cogsys@tagbox{\MakeUppercase{\cogsys@excursusname}}%
+           {}{dashed}{0.94mm}{1.0mm}{1.5mm}}\hskip2mm}%
+      \cogsys@sectionlabel}%
+    % title
+    \cogsys@put{\z@}{16.75mm}{bl}{%
+      \usebeamercolor[fg]{frametitle}%
+      \cogsys@ifkind{excursus}{\usebeamercolor[fg]{excursus frametitle}}%
+      \cogsys@fitline{\usebeamerfont{frametitle}}{\cogsys@titlesize}%
+        {\insertframetitle}{\cogsys@titlewidth}}%
+    \ifx\insertframesubtitle\@empty
+      \cogsys@put{\z@}{20.81mm}{tl}{\cogsys@flagbar{9mm}{0.75mm}}%
+    \else
+      \cogsys@put{\z@}{23.56mm}{bl}{%
+        \usebeamercolor[fg]{framesubtitle}%
+        \cogsys@fitline{\usebeamerfont{framesubtitle}\mdseries}%
+          {\cogsys@subtitlesize}{\insertframesubtitle}{\cogsys@titlewidth}}%
+      \cogsys@put{\z@}{26.69mm}{tl}{\cogsys@flagbar{9mm}{0.75mm}}%
+    \fi}}%
+  % beamer adds 0.25em after this template and .2cm before the body (t);
+  % compensate so the first body line sits at 26 / 33 mm.
+  \vskip-0.25em\vskip-.2cm
+  \vskip\cogsys@bodyshift}
+\newdimen\cogsys@bodyshift \cogsys@bodyshift=-0.52mm
+\newdimen\cogsys@titlerule % bottom edge of the title underline (0: none)
+
+%% ---------------------------------------------------------------------------
+%% Relaxed title gap
+%% ---------------------------------------------------------------------------
+% A slide whose body (with its footnotes and references) would run past the
+% text area moves the body up, by the overflow, but at most so far that the
+% first element on the slide (the ascenders of a text line, the top of an
+% image, the tab of a block) stays \cogsys@titlerelaxgap below the title
+% underline. Whatever overflow is left is handled as before (list spacing
+% shrinks, then the box is overfull). Options titlerelax, titlerelaxgap;
+% frame option norelax.
+% beamer typesets the body before the title, so once the title box is built
+% the complete slide can be measured; the shift is added to the title box.
+% All slides of a frame get the same shift: the largest one over its
+% slides, from the .aux file of the previous run.
+\newdimen\cogsys@relaxapplied % the shift of the current slide
+\newdimen\cogsys@relaxlimit   % the largest shift the current slide allows
+\newdimen\cogsys@relaxtop     % top edge of the body
+\newdimen\cogsys@relaxover    % overflow
+\newdimen\cogsys@relaxoffset  % top of the body -> its first box
+\newdimen\cogsys@relaxbase    % top of the body -> baseline of its first box
+\newdimen\cogsys@colinktop    % see \cogsys@colmeasure
+\newif\ifcogsys@colsfirst     % the slide opens with columns
+\newdimen\cogsys@topoverhang  % a block tab above the first box
+\newif\ifcogsys@tabattop      % the block being set opens the slide
+% right after beamer has built the title box (the frametitle template sets
+% \cogsys@titlerule; other templates leave it at 0)
+\patchcmd\endbeamer@frameslide{\ifbeamer@shrink\beamer@shrinkframebox\fi}%
+  {\cogsys@relaxtitle\ifbeamer@shrink\beamer@shrinkframebox\fi}{}%
+  {\PackageWarningNoLine{beamerthemecogsys}{Could not patch beamer's frame;
+    the gap below frame titles is never relaxed}}
+\def\cogsys@relaxtitle{%
+  \ifcogsys@titlerelax\ifcogsys@norelax\else
+  \ifbeamer@autobreak\else\ifbeamer@shrink\else\ifbeamer@plainframe\else
+  \ifbeamer@slidehaszoom\else\ifx\beamer@zoomer\@empty
+  \ifvoid\beamer@frametitlebox\else\ifdim\cogsys@titlerule>\z@
+    \cogsys@relaxmeasure
+    \ifdim\cogsys@relaxapplied>\z@
+      \setbox\beamer@frametitlebox\vbox{%
+        \unvbox\beamer@frametitlebox\vskip-\cogsys@relaxapplied}%
+      \advance\beamer@frametextheight\cogsys@relaxapplied
+    \fi
+  \fi\fi\fi\fi\fi\fi\fi\fi\fi}
+\def\cogsys@relaxmeasure{%
+  % the references belong to the slide, the title's ones are known by now
+  \cogsys@flushbibs
+  % \beamer@framebox holds the body, which starts below the title box and
+  % beamer's top skip (natural width)
+  \cogsys@relaxtop=\dimexpr\ht\beamer@frametitlebox+\dp\beamer@frametitlebox
+    +\beamer@frametopskip\relax
+  \cogsys@framenatural\cogsys@relaxover
+  \cogsys@relaxover=\dimexpr\cogsys@relaxtop+\cogsys@relaxover-\textheight\relax
+  \cogsys@firstbox\beamer@framebox
+  % columns opening the slide: their content may rise above the row of
+  % columns ([T] columns start 1ex up); \cogsys@colinktop is measured from
+  % the baseline of the row
+  \ifcogsys@colsfirst\ifdim\cogsys@colinktop<\maxdimen
+    \ifdim\cogsys@relaxbase>-\maxdimen
+      \cogsys@relaxoffset=\dimexpr\cogsys@relaxbase+\cogsys@colinktop\relax
+    \fi
+  \fi\fi
+  \ifdim\cogsys@relaxoffset>-\maxdimen
+    \global\cogsys@relaxlimit=\dimexpr\cogsys@relaxtop+\cogsys@relaxoffset
+      -\cogsys@topoverhang-\cogsys@titlerule-\cogsys@titlerelaxgap\relax
+    \ifdim\cogsys@relaxlimit<\z@ \global\cogsys@relaxlimit=\z@ \fi
+  \fi
+  % the shift this slide needs
+  \ifdim\cogsys@relaxover<\z@ \cogsys@relaxover=\z@ \fi
+  \ifdim\cogsys@relaxover>\cogsys@relaxlimit
+    \cogsys@relaxover=\cogsys@relaxlimit
+  \fi
+  % the shift of the frame: the largest over its slides (previous run)
+  \edef\cogsys@rid{\beamer@framestartpage}%
+  \global\cogsys@relaxapplied=\cogsys@relaxover
+  \ifcsname cogsys@relaxaux@\cogsys@rid\endcsname
+    \ifdim\csname cogsys@relaxaux@\cogsys@rid\endcsname>\cogsys@relaxapplied
+      \global\cogsys@relaxapplied=\csname cogsys@relaxaux@\cogsys@rid\endcsname\relax
+    \fi
+  \fi
+  \ifdim\cogsys@relaxapplied>\cogsys@relaxlimit
+    \global\cogsys@relaxapplied=\cogsys@relaxlimit
+  \fi
+  % the largest over the slides of this run, for the next run
+  \ifcsname cogsys@relaxmax@\cogsys@rid\endcsname
+    \ifnum\c@page>\beamer@framestartpage\relax
+      \ifdim\csname cogsys@relaxmax@\cogsys@rid\endcsname>\cogsys@relaxover
+        \cogsys@relaxover=\csname cogsys@relaxmax@\cogsys@rid\endcsname\relax
+      \fi
+    \fi
+  \else
+    \xdef\cogsys@relaxids{\cogsys@relaxids,\cogsys@rid}%
+  \fi
+  \expandafter\xdef\csname cogsys@relaxmax@\cogsys@rid\endcsname{%
+    \the\cogsys@relaxover}%
+  \ifdim\cogsys@relaxover>\z@
+    \immediate\write\@auxout{\string\cogsys@relaxrecord
+      {\cogsys@rid}{\the\cogsys@relaxover}}%
+  \fi}
+\def\cogsys@relaxrecord#1#2{\global\@namedef{cogsys@relaxaux@#1}{#2}}
+\def\cogsys@relaxids{}
+% \cogsys@firstbox<vbox>: \cogsys@relaxoffset := distance from the top of
+% <vbox> to the top of its first box, \cogsys@relaxbase := to its baseline
+% (-\maxdimen: no box). Everything above that box is split off (at height 0,
+% the last break that fits wins); the rest starts with \splittopskip minus
+% the height of the box (if positive).
+\newbox\cogsys@splitsrc
+\def\cogsys@firstbox#1{%
+  \begingroup
+    \splitmaxdepth\maxdimen \vbadness\@M \vfuzz\maxdimen
+    \setbox\cogsys@splitsrc\copy#1%
+    \dimen@=\dimexpr\ht\cogsys@splitsrc+\dp\cogsys@splitsrc\relax
+    \splittopskip\z@
+    \setbox\@tempboxa\copy\cogsys@splitsrc
+    \setbox\tw@\vsplit\@tempboxa to\z@
+    \ifvoid\@tempboxa
+      \global\cogsys@relaxoffset=-\maxdimen \global\cogsys@relaxbase=-\maxdimen
+    \else
+      \global\cogsys@relaxoffset=\dimexpr\dimen@-\ht\@tempboxa-\dp\@tempboxa\relax
+      \splittopskip=1000pt
+      \setbox\@tempboxa\copy\cogsys@splitsrc
+      \setbox\tw@\vsplit\@tempboxa to\z@
+      \global\cogsys@relaxbase=\dimexpr\dimen@-\ht\@tempboxa-\dp\@tempboxa
+        +1000pt\relax
+    \fi
+  \endgroup}
+% \cogsys@framenatural<dimen>: natural height of \beamer@framebox with the
+% footnotes below it, as beamer places them; without footnotes, the space
+% below a closing block does not count
+\def\cogsys@framenatural#1{%
+  \setbox\@tempboxa\vbox{%
+    \unvcopy\beamer@framebox
+    \ifvoid\beamer@footins\unskip\fi
+    \vskip\beamer@framebottomskip
+    \ifvoid\beamer@footins\else
+      \footnoterule\unvcopy\beamer@footins
+    \fi}%
+  #1=\dimexpr\ht\@tempboxa+\dp\@tempboxa\relax}
+% compare with the previous run
+\AtEndDocument{%
+  \@for\cogsys@tmp:=\cogsys@relaxids\do{%
+    \ifx\cogsys@tmp\@empty\else
+      \cogsys@dimb=\csname cogsys@relaxmax@\cogsys@tmp\endcsname\relax
+      \ifcsname cogsys@relaxaux@\cogsys@tmp\endcsname
+        \advance\cogsys@dimb-\csname cogsys@relaxaux@\cogsys@tmp\endcsname\relax
+      \fi
+      \ifdim\cogsys@dimb<\z@ \cogsys@dimb=-\cogsys@dimb \fi
+      \ifdim\cogsys@dimb>0.01pt \global\cogsys@relaxreruntrue \fi
+    \fi}%
+  \ifcogsys@relaxrerun
+    \PackageWarningNoLine{beamerthemecogsys}{The space below some frame
+      titles has changed.\MessageBreak Rerun to get it right}%
+  \fi}
+\newif\ifcogsys@relaxrerun
+
+%% ---------------------------------------------------------------------------
+%% Lists
+%% ---------------------------------------------------------------------------
+% Nested lists step down one size from the text around them (beamer's
+% defaults are the fixed \small and \footnotesize, which do not shrink on a
+% \small frame and are larger than the block body).
+% \cogsys@smaller: switch to the largest size command below the current size
+\def\cogsys@smaller{%
+  \edef\cogsys@cursize{\f@size}\let\cogsys@target\relax
+  \cogsys@findsmaller\Huge\huge\LARGE\Large\large\normalsize
+    \small\footnotesize\scriptsize\tiny\@nil
+  \cogsys@target}
+\def\cogsys@findsmaller#1{%
+  \ifx#1\@nil\else
+    \ifx\cogsys@target\relax
+      \begingroup#1\expandafter\endgroup
+      \ifdim\f@size pt<\cogsys@cursize pt\let\cogsys@target#1\fi
+    \fi
+    \expandafter\cogsys@findsmaller
+  \fi}
+\setbeamerfont{itemize/enumerate subbody}{size=\cogsys@smaller}
+\setbeamerfont{itemize/enumerate subsubbody}{size=\cogsys@smaller}
+
+% \cogsys@listsize: text size of the innermost list, taken when it begins
+% (by the time a marker is set, \f@size is already the marker's size).
+% Outside lists it is the current size.
+\def\cogsys@listsize{\f@size}
+\def\cogsys@setlistsize{\edef\cogsys@listsize{\f@size}}
+\setbeamertemplate{itemize/enumerate body begin}{\cogsys@setlistsize}
+\setbeamertemplate{itemize/enumerate subbody begin}{\cogsys@setlistsize}
+\setbeamertemplate{itemize/enumerate subsubbody begin}{\cogsys@setlistsize}
+\setbeamertemplate{description body begin}{\cogsys@setlistsize}
+
+% itemize: mono dash; enumerate: two-digit mono numbers (01, 02, ...)
+% raised 0.3 mm at the 10 pt body
+\def\cogsys@marker#1{\cogsys@leftlabel{%
+  \raise\cogsys@listsize\dimexpr0.03mm\relax\hbox{%
+  \usebeamerfont{item}\usebeamercolor[fg]{item}#1}}}
+\setbeamertemplate{itemize item}{\cogsys@marker{\textendash}}
+\setbeamertemplate{itemize subitem}{\cogsys@marker{\textendash}}
+\setbeamertemplate{itemize subsubitem}{\cogsys@marker{\textperiodcentered}}
+\setbeamertemplate{enumerate item}{%
+  \cogsys@marker{\cogsys@twodigits{\c@enumi}}}
+\setbeamertemplate{enumerate subitem}{\cogsys@marker{\alph{enumii}}}
+\setbeamertemplate{enumerate subsubitem}{\cogsys@marker{\roman{enumiii}}}
+\setbeamertemplate{description item}{\insertdescriptionitem}
+
+% beamer right-aligns labels in \labelwidth; we left-align them at the margin.
+\def\cogsys@leftlabel#1{\hbox to\dimexpr\leftmargin-\labelsep\relax{#1\hss}}
+\setlength\leftmargini{5.9mm}
+\setlength\leftmarginii{4.5mm}
+\setlength\leftmarginiii{4.5mm}
+\setlength\labelsep{2.5mm}
+\def\@listi{\leftmargin\leftmargini
+  \topsep 0mm \@plus 1mm
+  \parsep\z@ \itemsep 1.5mm \@plus 0.5mm \@minus 0.5mm}
+\let\@listI\@listi
+\def\@listii{\leftmargin\leftmarginii
+  \topsep 0.75mm \@plus 0.5mm \parsep\z@ \itemsep 0.75mm}
+\def\@listiii{\leftmargin\leftmarginiii
+  \topsep 0.75mm \@plus 0.5mm \parsep\z@ \itemsep 0.75mm}
+
+%% ---------------------------------------------------------------------------
+%% Blocks
+%% ---------------------------------------------------------------------------
+% A ruled box with a tab sitting on the top rule, 2.5 mm from the left.
+%   \cogsys@boxbegin{<filled|outlined>}{<tab text>}{<rule width>}
+%   ... body ...
+%   \cogsys@boxend
+\newbox\cogsys@blockbox
+\newdimen\cogsys@blockrule
+\newdimen\cogsys@padtop     % rule top -> top of the first line box
+\newdimen\cogsys@padbottom  % last baseline -> outer bottom edge
+\newdimen\cogsys@padside    % right
+\newdimen\cogsys@padleft
+\newdimen\cogsys@blockwidth
+\newdimen\cogsys@blockabove \cogsys@blockabove=6.81mm % last baseline -> rule
+\newdimen\cogsys@blockbelow \cogsys@blockbelow=2.5mm
+\def\cogsys@tabtextfont{\normalfont\usebeamerfont{block title}}
+\def\cogsys@tababove{1.37mm}\def\cogsys@tabbelow{1.44mm}
+
+% Depth of the last line that the paddings already account for: at most
+% that of a text line. Anything deeper (a tabular hangs half below its
+% baseline) keeps its extra depth.
+\def\cogsys@linedepth{%
+  \ifdim\prevdepth>\dp\strutbox \dp\strutbox
+  \else\ifdim\prevdepth>\z@ \prevdepth
+  \else\z@\fi\fi}
+
+\def\cogsys@blockdefaults{%
+  \cogsys@padtop=2.54mm \cogsys@padbottom=4.3mm
+  \cogsys@padside=3mm \cogsys@padleft=3.25mm}
+
+% Vertical placement: the top rule sits \cogsys@blockabove below the last
+% baseline above; the tab overhangs without taking space.
+% At the top of a [T] column (beamer adds \vskip-1ex there) a block either
+% follows other content (same gap as outside the columns) or opens the
+% frame (top rule level with the cap height of a neighbouring text column).
+\newdimen\cogsys@blockcoltop   \cogsys@blockcoltop=3.5mm
+\newdimen\cogsys@blockframetop \cogsys@blockframetop=0.6mm
+\newif\ifcogsys@bodytop      % nothing typeset in the frame body yet
+\newif\ifcogsys@colsatbodytop % current columns opened the frame body
+\newif\ifcogsys@afterblock    % the previous element was a block
+\AddToHook{para/begin}{\global\cogsys@bodytopfalse\global\cogsys@afterblockfalse}
+\AddToHook{env/columns/begin}{%
+  \ifcogsys@bodytop
+    \cogsys@colsatbodytoptrue
+    \global\cogsys@colsfirsttrue \global\cogsys@colinktop=\maxdimen
+  \else\cogsys@colsatbodytopfalse\fi}
+\def\cogsys@blockstart{%
+  \par
+  % a block opening the slide (or a column that opens it): its tab rises
+  % above everything else, see \cogsys@tab
+  \global\cogsys@tabattopfalse
+  \ifcogsys@bodytop \global\cogsys@tabattoptrue \fi
+  \ifdim\prevdepth>-999pt\else
+    \ifdim\lastskip=-1ex \ifcogsys@colsatbodytop
+      \global\cogsys@tabattoptrue
+    \fi\fi
+  \fi
+  \ifcogsys@afterblock
+    % stacked blocks: 5.5 mm between the boxes, plus room for the tab
+    \vskip\dimexpr7.65mm-\cogsys@blockbelow\relax
+  \else\ifdim\prevdepth>-999pt
+    \vskip\dimexpr\cogsys@blockabove-\cogsys@linedepth\relax
+  \else
+    \ifdim\lastskip=-1ex
+      \ifcogsys@colsatbodytop\vskip\cogsys@blockframetop
+      \else\vskip\cogsys@blockcoltop\fi
+    \fi
+  \fi\fi
+  \global\cogsys@bodytopfalse
+  \nointerlineskip}
+
+\def\cogsys@boxbegin#1#2#3{%
+  \cogsys@blockstart
+  \cogsys@blockdefaults
+  \csname cogsys@pad@#1\endcsname % per-style paddings, if any
+  \edef\cogsys@tabstyle{#1}%
+  % beamer passes the block title as \insertblocktitle: look one level
+  % inside, an empty or blank title means no tab
+  \expandafter\cogsys@settabtext\expandafter{#2}%
+  \ifx\cogsys@tabtext\@empty\advance\cogsys@padtop-0.75mm\fi
+  \cogsys@blockrule=#3\relax
+  \cogsys@blockwidth=\linewidth
+  \setbox\cogsys@blockbox\vbox\bgroup\color@begingroup
+    \hsize=\dimexpr\cogsys@blockwidth-\cogsys@padleft-\cogsys@padside\relax
+    \linewidth=\hsize \textwidth=\hsize \columnwidth=\hsize
+    \@parboxrestore\raggedright
+    \usebeamerfont{block body}\usebeamercolor[fg]{block body}%
+    \parindent=0pt
+    \hbox{}\relax % the first baseline is \baselineskip below the top
+    \ignorespaces}
+% \begin{block} without braces takes the next token as the title: after an
+% empty line that is \par, which also means no tab
+\long\def\cogsys@settabtext#1{%
+  \long\def\cogsys@tabtext{#1}%
+  \ifx\cogsys@tabtext\cogsys@partoken \let\cogsys@tabtext\@empty \fi
+  \ifblank{#1}{\let\cogsys@tabtext\@empty}{}}
+\long\def\cogsys@partoken{\par}
+\def\cogsys@boxend{%
+    \par\unskip
+    \vskip-\cogsys@linedepth\relax % bottom = last baseline
+  \color@endgroup\egroup
+  \cogsys@drawbox
+  \prevdepth=0pt
+  \vskip\cogsys@blockbelow
+  \global\cogsys@afterblocktrue}
+% The box: baseline at the outer top edge (height 0), so it hangs below the
+% current position. The tab is overlaid on the top rule and takes no space.
+\def\cogsys@drawbox{%
+  \def\cogsys@tmp{excursus}%
+  \ifx\cogsys@tabstyle\cogsys@tmp
+    \expandafter\cogsys@drawexcursusbox
+  \else
+    \expandafter\cogsys@drawruledbox
+  \fi}
+\def\cogsys@drawruledbox{%
+  \cogsys@dimc=\dimexpr\ht\cogsys@blockbox+\dp\cogsys@blockbox
+    +\cogsys@padtop+\cogsys@padbottom-2\cogsys@blockrule\relax
+  \vtop{\offinterlineskip
+    % first line: top rule (below the baseline), then the tab on top of it
+    \hbox to\cogsys@blockwidth{%
+      \rlap{\color{cogsysink}\vrule\@width\cogsys@blockwidth
+        \@height\z@\@depth\cogsys@blockrule}%
+      \ifx\cogsys@tabtext\@empty\else\kern2.5mm\cogsys@tab\fi\hss}%
+    \hbox to\cogsys@blockwidth{%
+      {\color{cogsysink}\vrule\@width\cogsys@blockrule\@height\cogsys@dimc}%
+      \kern\dimexpr\cogsys@padleft-\cogsys@blockrule\relax
+      \vbox to\cogsys@dimc{%
+        \kern\dimexpr\cogsys@padtop-\cogsys@blockrule\relax
+        \copy\cogsys@blockbox\vss}%
+      \hss
+      {\color{cogsysink}\vrule\@width\cogsys@blockrule\@height\cogsys@dimc}}%
+    {\color{cogsysink}\hrule\@height\cogsys@blockrule\@width\cogsys@blockwidth}}}
+% tab, vertically centred on the top rule
+\def\cogsys@tab{%
+  \setbox\cogsys@box\hbox{\color@begingroup
+    \cogsys@tabtextfont
+    \def\cogsys@tmp{outlined}%
+    \def\cogsys@tmpb{excursus}%
+    \ifx\cogsys@tabstyle\cogsys@tmp
+      \cogsys@canvascolor\color{cogsysink}%
+      \cogsys@tagbox{\cogsys@tabtext}{bg}{solid}%
+        {\cogsys@tababove}{\cogsys@tabbelow}{1.75mm}%
+    \else\ifx\cogsys@tabstyle\cogsys@tmpb
+      \usebeamercolor{excursus block}\color{cogsysink}%
+      \cogsys@tagbox{\cogsys@tabtext}{bg}{dashed}%
+        {\cogsys@tababove}{\cogsys@tabbelow}{1.75mm}%
+    \else
+      \color{cogsyspaper}%
+      \cogsys@tagbox{\cogsys@tabtext}{cogsysink}{none}%
+        {\cogsys@tababove}{\cogsys@tabbelow}{1.5mm}%
+    \fi\fi\color@endgroup}%
+  % how far the tab rises above the top rule (see Relaxed title gap)
+  \ifcogsys@tabattop
+    \global\cogsys@tabattopfalse
+    \dimen@=\dimexpr(\ht\cogsys@box+\dp\cogsys@box-\cogsys@blockrule)/2\relax
+    \ifdim\dimen@>\cogsys@topoverhang \global\cogsys@topoverhang=\dimen@ \fi
+  \fi
+  \smash{\lower\dimexpr(\ht\cogsys@box-\dp\cogsys@box+\cogsys@blockrule)/2\relax
+    \box\cogsys@box}}
+
+\setbeamertemplate{block begin}{%
+  \cogsys@boxbegin{filled}{\insertblocktitle}{0.25mm}}
+\setbeamertemplate{block end}{\cogsys@boxend}
+\setbeamertemplate{block example begin}{%
+  \cogsys@boxbegin{outlined}{\insertblocktitle}{0.25mm}}
+\setbeamertemplate{block example end}{\cogsys@boxend}
+\setbeamertemplate{block alerted begin}{%
+  \cogsys@boxbegin{filled}{\insertblocktitle}{0.6mm}}
+\setbeamertemplate{block alerted end}{\cogsys@boxend}
+
+%% ---------------------------------------------------------------------------
+%% Excursus block: an optional aside inside a normal slide
+%% ---------------------------------------------------------------------------
+%   \begin{excursusblock}{<title>} ... \end{excursusblock}
+%   \begin{excursusblock}<2->{} ...     overlays as for block; an empty
+%                                        title leaves just EXKURS in the tab
+% The excursus slide in small: tinted fill (excursus canvas colour), the
+% hatched edge marker as the left edge, a dashed outline instead of the
+% solid rule and a dashed tab EXKURS · <title>.
+\setbeamercolor{excursus block}{bg=cogsysexcursus}
+\def\cogsys@pad@excursus{\cogsys@padleft=5mm} % 2 mm hatch + 3 mm gap
+% dashed rules at block rule width, same rhythm as the dashed tag
+% (0.5 mm on, 0.25 mm off)
+\def\cogsys@hdashrule#1{\hbox to#1{%
+  \cleaders\hbox to0.75mm{\hss\vrule\@width0.5mm\@height\cogsys@blockrule\hss}%
+  \hfil}}
+\def\cogsys@vdashrule#1{\vbox to#1{%
+  \cleaders\vbox to0.75mm{\vss\hrule\@width\cogsys@blockrule\@height0.5mm\vss}%
+  \vfil}}
+% Same outer geometry as \cogsys@drawruledbox: baseline at the outer top
+% edge, the box hangs below.
+\def\cogsys@drawexcursusbox{%
+  \cogsys@dimc=\dimexpr\ht\cogsys@blockbox+\dp\cogsys@blockbox
+    +\cogsys@padtop+\cogsys@padbottom\relax
+  \vtop{\offinterlineskip
+    \hrule\@height\z@\@width\cogsys@blockwidth
+    \cogsys@canvas{\cogsys@blockwidth}{\cogsys@dimc}{%
+      \cogsys@put{\z@}{\z@}{tl}{\usebeamercolor{excursus block}%
+        \cogsys@rect{\cogsys@blockwidth}{\cogsys@dimc}{bg}}%
+      \cogsys@put{\z@}{\z@}{tl}{\cogsys@hatch{\cogsys@dimc}}%
+      \cogsys@put{\z@}{\z@}{tl}{\color{cogsysink}%
+        \cogsys@hdashrule{\cogsys@blockwidth}}%
+      \cogsys@put{\z@}{\cogsys@dimc}{bl}{\color{cogsysink}%
+        \cogsys@hdashrule{\cogsys@blockwidth}}%
+      \cogsys@put{\cogsys@blockwidth}{\z@}{tr}{\color{cogsysink}%
+        \cogsys@vdashrule{\cogsys@dimc}}%
+      \cogsys@put{\cogsys@padleft}{\cogsys@padtop}{tl}{\copy\cogsys@blockbox}%
+      \cogsys@put{\cogsys@padleft-0.75mm}{\z@}{bl}{\cogsys@tab}}}}
+\newenvironment<>{excursusblock}[1]{%
+  \begin{actionenv}#2%
+    \ifblank{#1}%
+      {\def\cogsys@exctab{\MakeUppercase{\cogsys@excursusname}}}%
+      {\def\cogsys@exctab{\MakeUppercase{\cogsys@excursusname}\cogsys@tabsep#1}}%
+    \cogsys@boxbegin{excursus}{\cogsys@exctab}{0.25mm}}%
+  {\cogsys@boxend\end{actionenv}}
+
+%% ---------------------------------------------------------------------------
+%% Theorems: numbered tabs (DEF 2.1, EX 2.2, ...), one counter per section,
+%% shared with algorithms.
+%% ---------------------------------------------------------------------------
+\@ifundefined{c@theorem}{\newcounter{theorem}}{}
+\@addtoreset{theorem}{section}
+\renewcommand\thetheorem{%
+  \ifnum\c@section>0 \arabic{section}.\fi\arabic{theorem}}
+
+% \cogsystheoremtag{<environment>}{<tag>}
+\newcommand\cogsystheoremtag[2]{\@namedef{cogsys@tag@#1}{#2}}
+\cogsystheoremtag{theorem}{THM}
+\cogsystheoremtag{corollary}{COR}
+\cogsystheoremtag{fact}{FACT}
+\cogsystheoremtag{lemma}{LEM}
+\cogsystheoremtag{problem}{PROB}
+\cogsystheoremtag{solution}{SOL}
+\cogsystheoremtag{definition}{DEF}
+\cogsystheoremtag{definitions}{DEF}
+\cogsystheoremtag{example}{EX}
+\cogsystheoremtag{examples}{EX}
+\cogsystheoremtag{Satz}{SATZ}
+\cogsystheoremtag{Folgerung}{FOLG}
+\cogsystheoremtag{Fakt}{FAKT}
+\cogsystheoremtag{Loesung}{L\"OS}
+\cogsystheoremtag{Beispiel}{BSP}
+\cogsystheoremtag{Beispiele}{BSP}
+\cogsystheoremtag{algorithm}{ALG}
+
+\def\cogsys@tabsep{\ \textperiodcentered\ }
+% remember the environment name (beamer wraps theorems in actionenv)
+\def\cogsys@thmenv{}
+\let\cogsys@orig@thm\@thm
+\def\@thm{\let\cogsys@thmenv\@currenvir\cogsys@orig@thm}
+\def\cogsys@theoremtag{%
+  \@ifundefined{cogsys@tag@\cogsys@thmenv}%
+    {\MakeUppercase{\inserttheoremname}}%
+    {\@nameuse{cogsys@tag@\cogsys@thmenv}}}
+\setbeamertemplate{theorem begin}{%
+  \def\cogsys@tmp{exampleblock}%
+  \cogsys@boxbegin
+    {\ifx\inserttheoremblockenv\cogsys@tmp outlined\else filled\fi}%
+    {\cogsys@theoremtag\inserttheoremnumber
+     \ifx\inserttheoremaddition\@empty\else
+       \cogsys@tabsep\inserttheoremaddition\fi}%
+    {0.25mm}}
+\setbeamertemplate{theorem end}{\cogsys@boxend}
+\setbeamertemplate{proof begin}{%
+  \cogsys@boxbegin{outlined}{\insertproofname}{0.25mm}}
+\setbeamertemplate{proof end}{\cogsys@boxend}
+\setbeamertemplate{qed symbol}{\rule{1.2mm}{1.2mm}}
+% beamer's \inserttheoremnumber has a leading space; keep a single one.
+
+%% ---------------------------------------------------------------------------
+%% Footnotes and on-slide references
+%% ---------------------------------------------------------------------------
+% Footnotes sit at the bottom of the text area, 10 mm above the paper edge,
+% behind an 11 mm hairline. Full references (\framebib, \framecite) follow
+% after the footnotes, unnumbered, with a 2em hanging indent; references
+% cited in the frame title come first.
+\renewcommand\footnoterule{%
+  \kern-1mm{\color{cogsysink}\hrule width 11mm height 0.19mm}\kern1.25mm}
+\newif\ifcogsys@bibnote
+\newif\ifcogsys@firstbib
+\setbeamertemplate{footnote}{%
+  \parindent=0pt \parfillskip=0pt plus 1fil
+  \usebeamerfont{footnote}\usebeamercolor[fg]{footnote}%
+  \ifcogsys@bibnote
+    \ifcogsys@firstbib\global\cogsys@firstbibfalse\vskip1.5mm\fi
+    \raggedright\hangindent=2em \hangafter=1
+    \insertfootnotetext\par
+  \else
+    \raggedright\leftskip=3mm
+    \noindent\llap{\hbox to3mm{%
+      {\usebeamerfont{footnote mark in footnote}\usebeamercolor[fg]{footnote mark}%
+       \raise0.1mm\hbox{\@thefnmark}}\hss}}%
+    \insertfootnotetext\par
+  \fi}
+\setlength\footnotesep{7.9pt}
+\def\@makefnmark{\hbox{\kern0.15mm\raise0.75ex\hbox{%
+  \usebeamercolor[fg]{footnote mark}\usebeamerfont*{footnote mark}\@thefnmark}}}
+
+% Full references on the slide (requires biblatex).
+%   \framebib{<keys>}       add full entries to the footnote region
+%   \framecite{<key>}       \textcite + full entry
+%   \frameparencite{<key>}  \parencite + full entry
+\def\cogsys@bibkeys{}
+\def\cogsys@titlebibkeys{}
+\newif\ifcogsys@titlebib
+% \cogsys@addbibkey<list>{<key>}: append <key> to <list> unless present
+\def\cogsys@addbibkey#1#2{%
+  \edef\cogsys@tmp{\noexpand\in@{,#2,}{,#1,}}%
+  \cogsys@tmp
+  \ifin@\else\xdef#1{\ifx#1\@empty\else#1,\fi#2}\fi}
+\newcommand<>\framebib[1]{%
+  \@ifundefined{blx@citeargs}{%
+    \PackageError{beamerthemecogsys}{\string\framebib\space needs biblatex}{}}{}%
+  \@for\cogsys@key:=#1\do{%
+    \ifcogsys@titlebib
+      \cogsys@addbibkey\cogsys@titlebibkeys\cogsys@key
+    \else
+      \cogsys@addbibkey\cogsys@bibkeys\cogsys@key
+    \fi
+    \ifin@\else
+      \expandafter\gdef\csname cogsys@bibspec@\cogsys@key\endcsname{#2}%
+    \fi}}
+\newcommand\framecite[2][]{\textcite[#1]{#2}\framebib{#2}}
+\newcommand\frameparencite[2][]{\parencite[#1]{#2}\framebib{#2}}
+\def\cogsys@flushbibs{%
+  % continuation pages of allowframebreaks frames: the title's entries are
+  % already in the footnote box from the first page
+  \ifnum\beamer@autobreakcount>1 \global\let\cogsys@titlebibkeys\@empty\fi
+  % title references first
+  \let\cogsys@tmpkeys\cogsys@bibkeys
+  \global\let\cogsys@bibkeys\cogsys@titlebibkeys
+  \global\let\cogsys@titlebibkeys\@empty
+  \@for\cogsys@key:=\cogsys@tmpkeys\do{%
+    \cogsys@addbibkey\cogsys@bibkeys\cogsys@key}%
+  \ifx\cogsys@bibkeys\@empty\else
+    \global\cogsys@firstbibtrue
+    \global\cogsys@bibnotetrue
+    \begingroup
+    \def\@thefnmark{}% beamer's footnote code expects a mark
+    \@for\cogsys@key:=\cogsys@bibkeys\do{%
+      \expandafter\let\expandafter\cogsys@spec
+        \csname cogsys@bibspec@\cogsys@key\endcsname
+      \edef\cogsys@next{\noexpand\beamer@framefootnotetext\cogsys@spec
+        {\noexpand\cogsys@bibentry{\cogsys@key}}}%
+      \cogsys@next}%
+    \endgroup
+    \global\cogsys@bibnotefalse
+    \global\let\cogsys@bibkeys\@empty
+  \fi}
+\def\cogsys@bibentry#1{\fullcite{#1}}
+% after the frame title (beamer typesets it after the body), right before
+% beamer places the footnotes; then measure the room for algorithms (see
+% Algorithms)
+\pretocmd\beamer@autobreakframebox{\cogsys@flushbibs\cogsys@algmeasure}{}%
+  {\PackageWarningNoLine{beamerthemecogsys}{Could not patch beamer's footnotes}}
+% \beamer@framefootnotetext takes the overlay spec before the text
+\def\cogsys@bibspec@{}
+
+%% ---------------------------------------------------------------------------
+%% Table of contents, captions, bibliography, misc.
+%% ---------------------------------------------------------------------------
+\setbeamertemplate{section in toc}{%
+  \leavevmode\hbox to7mm{\usebeamerfont{item}\usebeamercolor[fg]{item}%
+    \cogsys@twodigits{\inserttocsectionnumber}\hss}%
+  \inserttocsection\par}
+\setbeamertemplate{subsection in toc}{%
+  \leavevmode\hskip7mm\hbox to7mm{\usebeamerfont{item}\usebeamercolor[fg]{item}%
+    \inserttocsectionnumber.\inserttocsubsectionnumber\hss}%
+  \inserttocsubsection\par}
+\setbeamertemplate{caption}{%
+  \raggedright
+  {\usebeamerfont{caption name}\usebeamercolor[fg]{caption name}%
+   \MakeUppercase{\insertcaptionname}~\insertcaptionnumber}\hskip2mm
+  {\usebeamerfont{caption}\usebeamercolor[fg]{caption}\insertcaption}\par}
+\setbeamertemplate{bibliography item}{}
+
+%% ---------------------------------------------------------------------------
+%% Inline code and listings
+%% ---------------------------------------------------------------------------
+\newcommand\code[1]{\texttt{#1}}
+\newcommand\bare[1]{\texttt{#1}}
+\newenvironment{codeblock}[1]{%
+  \cogsys@boxbegin{outlined}{#1}{0.25mm}\ttfamily}{\cogsys@boxend}
+
+\ifcogsys@listings
+  \IfFileExists{listings.sty}{}{\cogsys@listingsfalse}
+\fi
+\ifcogsys@listings
+    \RequirePackage{listings}
+    \renewcommand\code[1]{\lstinline[basicstyle=\ttfamily]{#1}}
+    \renewcommand\bare[1]{\lstinline[basicstyle=\ttfamily]{#1}}
+    % Listing text: 7.80 pt at the 10 pt body, scaled with the text size
+    % active before the listing (\tiny, \scriptsize, ...); the leading is
+    % always 1.6 times that size. Line numbers keep their ratio to it.
+    \def\cogsys@lstfont{%
+      \edef\cogsys@lstsize{\strip@pt\dimexpr\f@size pt*78/100\relax}%
+      \cogsys@mono{\cogsys@lstsize}{1.6}}
+    \def\cogsys@lstsize{7.80}
+    \lstset{
+      basicstyle=\cogsys@lstfont,
+      columns=fullflexible, keepspaces=true, upquote=true,
+      breaklines=true, tabsize=4, showstringspaces=false,
+      keywordstyle=\bfseries, commentstyle=\color{cogsysgrey777},
+      stringstyle=\color{cogsysgrey444},
+      numberstyle=\cogsys@mono{\strip@pt\dimexpr\cogsys@lstsize pt*602/780\relax}{1.0}%
+        \color{cogsysgrey888},
+      numbersep=2mm, xleftmargin=0pt, aboveskip=0pt, belowskip=0pt,
+    }
+\fi
+
+%% ---------------------------------------------------------------------------
+%% Algorithms: algorithmic in a tabbed box, font shrinks to fit
+%% ---------------------------------------------------------------------------
+% \begin{algo}[<options>]{<caption>}
+%   \Procedure{Lock}{i} ... \EndProcedure
+% \end{algo}
+% Options: width=<dim> (default \linewidth; a narrower box follows
+%            \centering, \raggedleft and the center environment),
+%          minsize=<pt> (smallest size when fitting, default 5 = \tiny),
+%          maxheight=<dim> (fit into this height instead of the room left on
+%            the slide), size=<pt> (fixed size, no fitting),
+%          numbers=true|false.
+%
+% Theme option algorithms=
+%   pseudocode  (default) algpseudocode from the algorithmicx bundle; the
+%               theme draws the indent guides itself. No TikZ needed.
+%   pseudocodex algpseudocodex (more features, but needs TikZ).
+%   false       no algorithm support.
+% A package the user loads takes precedence, before or after the theme;
+% algpseudocodex wins over algpseudocode.
+\def\cogsys@str@pseudocode{pseudocode}
+\def\cogsys@str@pseudocodex{pseudocodex}
+\def\cogsys@str@false{false}
+% packages loaded before the theme (for those loaded after it, see the end
+% of the preamble below)
+\@ifpackageloaded{algpseudocode}{\let\cogsys@algorithms\cogsys@str@pseudocode}{}
+\@ifpackageloaded{algpseudocodex}{\let\cogsys@algorithms\cogsys@str@pseudocodex}{}
+\ifx\cogsys@algorithms\cogsys@str@pseudocodex
+  \IfFileExists{algpseudocodex.sty}{}{%
+    \let\cogsys@algorithms\cogsys@str@pseudocode
+    \PackageWarningNoLine{beamerthemecogsys}{algpseudocodex not found;
+      using algpseudocode instead}}
+\fi
+\ifx\cogsys@algorithms\cogsys@str@pseudocode
+  \IfFileExists{algpseudocode.sty}{}{%
+    \let\cogsys@algorithms\cogsys@str@false
+    \PackageWarningNoLine{beamerthemecogsys}{algpseudocode not found;
+      the `algo' environment is disabled}}
+\fi
+
+\def\cogsys@alglabelwidth{1.2em}\def\cogsys@alglabelsep{0.5em}
+% hooks in algorithmicx, used by the algpseudocode setup; no-ops otherwise
+\def\cogsys@algguides{}
+\def\cogsys@algnoline{\nointerlineskip}
+% run in trial builds (see Fitting)
+\def\cogsys@algdraftsetup{}
+
+% algpseudocode: the theme draws the indent guides
+\def\cogsys@algsetup@pseudocode{%
+  \algrenewcommand\algorithmiccomment[1]{%
+    \hfill{\color{cogsysgrey555}$\triangleright$~##1}}%
+  % Indent guides: every line of a block body gets one rule segment per
+  % open block; segments of consecutive lines join into a continuous line.
+  \expandafter\patchcmd\csname ALG@doentity\endcsname
+    {\noindent\hskip\ALG@tlm}{\noindent\cogsys@algguides\hskip\ALG@tlm}{}%
+    {\PackageWarningNoLine{beamerthemecogsys}{Could not patch algorithmicx;
+      no indent guides}}%
+  % noend: end entities have no text but still start an empty line, which
+  % adds the depth of the previous line; take that depth back
+  \expandafter\patchcmd\csname ALG@doentity\endcsname
+    {\item[]\nointerlineskip}{\item[]\cogsys@algnoline}{}%
+    {\PackageWarningNoLine{beamerthemecogsys}{Could not patch algorithmicx;
+      blocks may get extra space}}%
+  \let\cogsys@algguides\cogsys@algguides@on
+  \let\cogsys@algnoline\cogsys@algnoline@on}
+\def\cogsys@algnoline@on{\ifdim\prevdepth>\z@\vskip-\prevdepth\fi
+  \nointerlineskip}
+\def\cogsys@algguides@on{%
+  \ifx\ALG@text\ALG@x@notext\else
+    \cogsys@dima=0.12em
+    \count@=\z@
+    \loop\ifnum\count@<\c@ALG@nested
+      \rlap{\kern\cogsys@dima\color{cogsysrule}%
+        \vrule\@width0.19mm\@height.7\baselineskip\@depth.3\baselineskip}%
+      \advance\count@\@ne
+      \advance\cogsys@dima\csname ALG@ind@\the\count@\endcsname\relax
+    \repeat
+  \fi}
+% algpseudocodex: its own (TikZ) indent lines in the theme's colours.
+% noEnd and indLines are package options (the theme passes them when it
+% loads the package); options of a user's \usepackage are kept.
+\def\cogsys@algsetup@pseudocodex{%
+  \algpx@italicCommentsfalse \algpx@rightCommentstrue
+  \def\algpx@commentColor{cogsysgrey555}%
+  \tikzset{algpxIndentLine/.style={draw=cogsysrule, line width=0.19mm}}%
+  % straight indent guides without the end tick (after the package's own
+  % hook, which sets the length)
+  \AtBeginEnvironment{algorithmic}{\setlength{\algpx@indXLineLength}{0pt}}%
+  % the lines are drawn from positions of the previous run; only the final
+  % build may set them
+  \def\cogsys@algdraftsetup{\algpx@indLinesfalse}}
+% both: line numbers, procedure names (per algorithmicx language)
+\def\cogsys@algsetup@common{%
+  \algrenewcommand\textproc{}%
+  \algrenewcommand\alglinenumber[1]{%
+    {\cogsys@mono{\cogsys@alglnsize}{1.0}\color{cogsysgrey888}##1}}}
+% algorithmicx hard-codes the line number column; make it adjustable
+\def\cogsys@algsetup@base{%
+  \expandafter\patchcmd\csname\string\algorithmic\endcsname{\labelwidth 1.2em}{\labelwidth\cogsys@alglabelwidth}{}%
+    {\PackageWarningNoLine{beamerthemecogsys}{Could not patch algorithmic (1)}}%
+  \expandafter\patchcmd\csname\string\algorithmic\endcsname{\labelsep 0.5em}{\labelsep\cogsys@alglabelsep}{}%
+    {\PackageWarningNoLine{beamerthemecogsys}{Could not patch algorithmic (2)}}%
+  \expandafter\patchcmd\csname\string\algorithmic\endcsname
+    {\topsep 0.2em}{\topsep\z@}{}{}}
+
+\ifx\cogsys@algorithms\cogsys@str@pseudocodex
+  \@ifpackageloaded{algpseudocodex}{}{%
+    \RequirePackage[noEnd=true, indLines=true]{algpseudocodex}}
+  \cogsys@algsetup@pseudocodex
+\fi
+\ifx\cogsys@algorithms\cogsys@str@pseudocode
+  \@ifpackageloaded{algpseudocode}{}{\RequirePackage[noend]{algpseudocode}}
+  \cogsys@algsetup@pseudocode
+\fi
+\ifx\cogsys@algorithms\cogsys@str@false\else
+  \cogsys@algsetup@base
+  \cogsys@algsetup@common
+\fi
+% Packages loaded after the theme. algpseudocodex defines its own
+% algorithmicx language, so the settings above have to be made again for it.
+\AddToHook{begindocument/before}{%
+  \let\cogsys@tmp\cogsys@algorithms
+  \@ifpackageloaded{algpseudocode}{\let\cogsys@tmp\cogsys@str@pseudocode}{}%
+  \@ifpackageloaded{algpseudocodex}{\let\cogsys@tmp\cogsys@str@pseudocodex}{}%
+  \ifx\cogsys@tmp\cogsys@algorithms
+    % algpseudocode loaded after algpseudocodex switches the language back
+    \ifx\cogsys@algorithms\cogsys@str@pseudocodex
+      \@ifpackageloaded{algpseudocode}{%
+        \alglanguage{pseudocodex}\cogsys@algsetup@common}{}%
+    \fi
+  \else
+    \ifx\cogsys@algorithms\cogsys@str@false \cogsys@algsetup@base \fi
+    % the guides of the algpseudocode setup would be drawn as well
+    \def\cogsys@algguides{}%
+    \def\cogsys@algnoline{\nointerlineskip}%
+    \let\cogsys@algorithms\cogsys@tmp
+    \csname cogsys@algsetup@\cogsys@algorithms\endcsname
+    \cogsys@algsetup@common
+  \fi}
+
+\newif\ifcogsys@algnumbers
+\def\cogsys@algsize{8.86}    % largest size; also the size before fitting
+\def\cogsys@algleading{1.5}
+\def\cogsys@alglnsize{6.91}  % line numbers: 78 %, like the list markers
+\def\cogsys@algminsize{5}
+\def\cogsys@algwidth{\linewidth}
+\define@key{cogsysalgo}{width}{\def\cogsys@algwidth{#1}}
+\define@key{cogsysalgo}{minsize}{\def\cogsys@algminsize{#1}}
+\define@key{cogsysalgo}{maxheight}{\def\cogsys@algmaxheight{#1}}
+\define@key{cogsysalgo}{size}{\def\cogsys@algfixedsize{#1}}
+\define@key{cogsysalgo}{numbers}[true]{\csname cogsys@algnumbers#1\endcsname}
+
+% Fitting. The body is typeset at trial sizes until the largest size
+% <= 8.86 pt is found whose height fits into the room the algorithm has on
+% the slide. That room is measured when the slide is complete: the free
+% space of the frame (everything else on it, footnotes and references
+% included) plus the height of the algorithm; the smallest room over the
+% slides of a frame is written to the .aux file (\cogsys@algroom). It does
+% not depend on the size of the algorithm, so the document settles after
+% two runs. Heights are measured, not extrapolated, because lines that wrap
+% at one size may not wrap at another.
+% records of earlier theme versions in old .aux files
+\def\cogsys@algrecord#1#2{}
+\def\cogsys@algpos#1#2{}
+\def\cogsys@algroom#1#2{\global\@namedef{cogsys@algroom@#1}{#2}}
+\newtoks\cogsys@algbody
+\newdimen\cogsys@algavail % room for the box contents
+\newdimen\cogsys@alght    % height of the last trial
+\newdimen\cogsys@algtrial % size of the last trial
+\newdimen\cogsys@alglo    % largest size that fits
+\newdimen\cogsys@alghi    % smallest size that does not fit
+\newdimen\cogsys@algfloor % smallest size
+\newdimen\cogsys@algnatural % height at the largest size
+\newcount\cogsys@algtries
+\newif\ifcogsys@algknown
+\newif\ifcogsys@algdraft
+
+\NewDocumentEnvironment{algo}{O{} m +b}{%
+  \ifx\cogsys@algorithms\cogsys@str@false
+    \PackageError{beamerthemecogsys}{The algo environment needs
+      algpseudocode}{Install algorithmicx (algpseudocode) or remove the
+      algo environment.}%
+  \fi
+  \cogsys@blockstart
+  \cogsys@algnumberstrue
+  \let\cogsys@algmaxheight\relax \let\cogsys@algfixedsize\relax
+  \setkeys{cogsysalgo}{#1}%
+  \refstepcounter{theorem}%
+  \stepcounter{cogsys@alginslide}%
+  % the same algorithm on all slides of a frame (overlays) gets one size
+  \edef\cogsys@algid{\beamer@framestartpage-\the\c@cogsys@alginslide}%
+  \def\cogsys@tabtext{\cogsys@tag@algorithm~\thetheorem
+    \if\relax\detokenize{#2}\relax\else\cogsys@tabsep#2\fi}%
+  \cogsys@blockwidth=\dimexpr\cogsys@algwidth\relax
+  \cogsys@padtop=1.91mm \cogsys@padbottom=3.57mm
+  \cogsys@padside=3mm \cogsys@padleft=1.75mm
+  % --- typeset the body at the chosen font size
+  \cogsys@algbody{#3}%
+  \cogsys@algsave
+  \ifx\cogsys@algfixedsize\relax
+    \cogsys@algfit
+  \else
+    \cogsys@algbuild\cogsys@algfixedsize
+  \fi
+  \cogsys@algnote
+  \def\cogsys@tabstyle{filled}%
+  \cogsys@blockrule=0.25mm
+  \def\cogsys@tababove{1.2mm}\def\cogsys@tabbelow{1.24mm}%
+  \cogsys@algplace
+  \prevdepth=0pt
+  \vskip\cogsys@blockbelow
+  \global\cogsys@afterblocktrue
+}{}
+% A narrower box follows the alignment of the surrounding text (\centering,
+% \raggedleft, center environment); otherwise it sits on the left.
+\def\cogsys@algplace{%
+  \ifdim\cogsys@blockwidth<\linewidth
+    \hbox to\linewidth{%
+      \hskip\leftskip\cogsys@drawbox\hskip\rightskip
+      \ifdim\gluestretch\leftskip=\z@
+        \ifdim\gluestretch\rightskip=\z@\hfil\fi
+      \fi}%
+  \else
+    \cogsys@drawbox
+  \fi}
+% \cogsys@algbuild{<size>}: typeset the body into \cogsys@blockbox at <size>
+% pt and measure it
+\def\cogsys@algbuild#1{%
+  \cogsys@algrestore
+  \edef\cogsys@size{#1}%
+  \setbox\cogsys@blockbox\vbox\bgroup\color@begingroup
+    \ifcogsys@algdraft\cogsys@algdraftsetup\fi
+    \hsize=\dimexpr\cogsys@blockwidth-\cogsys@padleft-\cogsys@padside\relax
+    \linewidth=\hsize \textwidth=\hsize \columnwidth=\hsize
+    \@parboxrestore
+    \normalfont\usebeamerfont{algorithm}%
+    \cogsys@fs{\cogsys@size}{\cogsys@algleading}%
+    \cogsys@dima=\cogsys@size pt\relax
+    \edef\cogsys@alglnsize{\strip@pt\dimexpr\cogsys@dima*78/100\relax}%
+    \edef\algorithmicindent{\the\dimexpr\cogsys@dima*996/886\relax}% 3.5 mm
+    \edef\cogsys@alglabelwidth{\the\dimexpr\cogsys@dima*1138/886\relax}% 4 mm
+    \edef\cogsys@alglabelsep{\the\dimexpr\cogsys@dima*569/886\relax}%   2 mm
+    \color{cogsysink}%
+    \let\gets\cogsys@gets
+    \hbox{}\relax
+    \ifcogsys@algnumbers\begin{algorithmic}[1]\else\begin{algorithmic}\fi
+    \the\cogsys@algbody
+    \end{algorithmic}%
+    \par\ifdim\prevdepth>0pt \vskip-\prevdepth\fi
+  \color@endgroup\egroup
+  \cogsys@alght=\dimexpr\ht\cogsys@blockbox+\dp\cogsys@blockbox\relax}
+% available height: room from the .aux file, or maxheight
+\def\cogsys@algfit{%
+  \cogsys@algknowntrue
+  \ifx\cogsys@algmaxheight\relax
+    \expandafter\let\expandafter\cogsys@tmp
+      \csname cogsys@algroom@\cogsys@algid\endcsname
+    \ifx\cogsys@tmp\relax
+      \cogsys@algknownfalse % first run
+    \else
+      \cogsys@algavail=\cogsys@tmp\relax
+    \fi
+    \def\cogsys@algtol{1mm}% the breathing room, see \cogsys@algmeasure
+  \else
+    \cogsys@algavail=\dimexpr\cogsys@algmaxheight
+      -5.48mm\relax % box padding and rules
+    \def\cogsys@algtol{0.1pt}%
+  \fi
+  \cogsys@algfloor=\cogsys@algminsize pt\relax
+  \ifdim\cogsys@algfloor>\cogsys@algsize pt\relax
+    \cogsys@algfloor=\cogsys@algsize pt\relax
+  \fi
+  \cogsys@algdrafttrue
+  \cogsys@algtrial=\cogsys@algsize pt\relax
+  \cogsys@algbuild\cogsys@algsize
+  \cogsys@algnatural=\cogsys@alght
+  \ifcogsys@algknown
+    \ifdim\cogsys@alght>\cogsys@algavail \cogsys@algshrink \fi
+  \fi
+  \cogsys@algdraftfalse
+  \ifx\cogsys@algorithms\cogsys@str@pseudocodex
+    \cogsys@algbuild{\strip@pt\cogsys@algtrial}% the final build
+  \fi
+  \ifcogsys@algknown
+    \ifdim\cogsys@alght>\dimexpr\cogsys@algavail+\cogsys@algtol\relax
+      \PackageWarning{beamerthemecogsys}{Algorithm \thetheorem\space does not
+        fit, even at the\MessageBreak smallest size
+        (\cogsys@algminsize\space pt)}%
+    \fi
+  \fi}
+% shrink in proportion until it fits (at most 4 times), then bisect between
+% the largest size that fits and the smallest that does not
+\def\cogsys@algshrink{%
+  \cogsys@alglo=\z@ \cogsys@alghi=\cogsys@algtrial
+  \cogsys@algtries=\z@
+  \cogsys@algshrinkstep
+  \ifdim\cogsys@alglo=\z@ \cogsys@alglo=\cogsys@algfloor \fi % nothing fits
+  \cogsys@algtries=\z@
+  \cogsys@algbisect
+  \ifdim\cogsys@algtrial=\cogsys@alglo\else
+    \cogsys@algtrial=\cogsys@alglo
+    \cogsys@algbuild{\strip@pt\cogsys@alglo}%
+  \fi}
+\def\cogsys@algshrinkstep{%
+  \advance\cogsys@algtries\@ne
+  \ifdim\cogsys@algavail>\z@
+    \cogsys@algtrial=\dimexpr\cogsys@algtrial*\cogsys@algavail
+      /\cogsys@alght\relax
+  \else
+    \cogsys@algtrial=\cogsys@algfloor
+  \fi
+  \ifdim\cogsys@algtrial<\cogsys@algfloor \cogsys@algtrial=\cogsys@algfloor \fi
+  \cogsys@algtry
+  \let\cogsys@next\relax
+  \ifdim\cogsys@alght>\cogsys@algavail
+    \ifdim\cogsys@algtrial>\cogsys@algfloor
+      \ifnum\cogsys@algtries<4 \let\cogsys@next\cogsys@algshrinkstep \fi
+    \fi
+  \fi
+  \cogsys@next}
+% about 5 steps, down to 0.05 pt
+\def\cogsys@algbisect{%
+  \let\cogsys@next\relax
+  \ifnum\cogsys@algtries<5
+    \ifdim\dimexpr\cogsys@alghi-\cogsys@alglo\relax>0.05pt
+      \advance\cogsys@algtries\@ne
+      \cogsys@algtrial=\dimexpr(\cogsys@alglo+\cogsys@alghi)/2\relax
+      \cogsys@algtry
+      \let\cogsys@next\cogsys@algbisect
+    \fi
+  \fi
+  \cogsys@next}
+\def\cogsys@algtry{%
+  \cogsys@algbuild{\strip@pt\cogsys@algtrial}%
+  \ifdim\cogsys@alght>\cogsys@algavail
+    \cogsys@alghi=\cogsys@algtrial
+  \else
+    \cogsys@alglo=\cogsys@algtrial
+  \fi}
+\def\cogsys@gets{\ifmmode\leftarrow\else\textleftarrow\fi}
+
+% Every build starts from the same state: counters stepped in the body
+% (footnote marks, the marks of algpseudocodex, pgf's picture ids) and
+% footnote texts are reset to what they were before the first build. So
+% only the final build counts, and it gets the same names in every run.
+\newbox\cogsys@algfootsave
+\def\cogsys@algcounters{%
+  \@elt{c@algpx@indentCount}\@elt{c@algpx@codeBoxCount}%
+  \@elt{c@algpx@pageCount}\@elt{c@algpx@lastIndentEnded}%
+  \@elt{c@algpx@tmpCount}\@elt{c@ALG@line}%
+  \@elt{pgf@picture@serial@count}}
+\def\cogsys@algsave{%
+  \begingroup
+    \let\@elt\cogsys@savecount
+    \beamer@overlaycounterresets\cogsys@algcounters
+  \endgroup
+  \setbox\cogsys@algfootsave\copy\beamer@footins}
+\def\cogsys@algrestore{%
+  \begingroup
+    \let\@elt\cogsys@restorecount
+    \beamer@overlaycounterresets\cogsys@algcounters
+  \endgroup
+  \global\setbox\beamer@footins\copy\cogsys@algfootsave}
+\def\cogsys@savecount#1{%
+  \ifcsname#1\endcsname
+    \expandafter\xdef\csname cogsys@sv@#1\endcsname{\the\csname#1\endcsname}%
+  \fi}
+\def\cogsys@restorecount#1{%
+  \ifcsname#1\endcsname
+    \global\csname#1\endcsname=\csname cogsys@sv@#1\endcsname\relax
+  \fi}
+
+% The room of each algorithm, measured when the slide is complete (right
+% before beamer places the footnotes, see Footnotes):
+%   free = \textheight - natural height of the frame and its footnotes
+%          + what is left of the relaxable gap below the title
+%   room = (heights of the algorithms in the same column or frame body
+%           + free + extra room of the column) * share
+% The extra room of a column is the height of the tallest column next to it
+% minus its own: shrinking the algorithm only helps the frame if its column
+% is the tallest. Several algorithms in one column share the room in
+% proportion to their heights at the largest size.
+% \cogsys@alg@<n> = {<column key>}{<columns group>}{<height>}{<largest height>}
+% (empty for algorithms that are not fitted to the slide)
+\def\cogsys@algnote{%
+  \expandafter\xdef\csname cogsys@alg@\the\c@cogsys@alginslide\endcsname{%
+    \ifx\cogsys@algfixedsize\relax\ifx\cogsys@algmaxheight\relax
+      {\cogsys@colkey}{\cogsys@colgrp}{\the\cogsys@alght}%
+      {\the\cogsys@algnatural}%
+    \fi\fi}}
+\def\cogsys@algget#1#2#3#4{%
+  \def\cogsys@algk{#1}\def\cogsys@algg{#2}%
+  \def\cogsys@algh{#3}\def\cogsys@algn{#4}}
+\newdimen\cogsys@algfree
+\newdimen\cogsys@algsumh
+\newdimen\cogsys@algsumn
+\newcount\cogsys@algi
+\newcount\cogsys@algj
+\newif\ifcogsys@algrerun
+\def\cogsys@algmeasure{%
+  \ifnum\c@cogsys@alginslide>\z@
+  \ifbeamer@autobreak\else\ifbeamer@shrink\else
+    \cogsys@framenatural\cogsys@algfree
+    % the gap below the title gives way first (see Relaxed title gap): count
+    % the room as if it were relaxed completely
+    \cogsys@algfree=\dimexpr\textheight-\cogsys@algfree
+      +\cogsys@relaxlimit-\cogsys@relaxapplied
+      -1mm\relax % breathing room
+    \cogsys@algi=\z@
+    \cogsys@algeach
+  \fi\fi\fi}
+\def\cogsys@algeach{%
+  \ifnum\cogsys@algi<\c@cogsys@alginslide
+    \advance\cogsys@algi\@ne
+    \cogsys@algroomof
+    \expandafter\cogsys@algeach
+  \fi}
+\def\cogsys@algroomof{%
+  \edef\cogsys@tmp{\csname cogsys@alg@\the\cogsys@algi\endcsname}%
+  \ifx\cogsys@tmp\@empty\else
+    \expandafter\cogsys@algget\cogsys@tmp
+    \let\cogsys@algkey\cogsys@algk
+    \let\cogsys@alggrp\cogsys@algg
+    \cogsys@dimb=\cogsys@algn\relax
+    \cogsys@algsumh=\z@ \cogsys@algsumn=\z@
+    \cogsys@algj=\z@
+    \cogsys@algsum
+    \cogsys@dima=\z@
+    \ifx\cogsys@alggrp\@empty\else
+      \ifcsname cogsys@colht@\cogsys@algkey\endcsname
+        \cogsys@dima=\dimexpr\csname cogsys@colmax@\cogsys@alggrp\endcsname
+          -\csname cogsys@colht@\cogsys@algkey\endcsname\relax
+      \fi
+    \fi
+    \cogsys@dima=\dimexpr\cogsys@algsumh+\cogsys@algfree+\cogsys@dima\relax
+    \ifdim\cogsys@algsumn>\z@
+      \cogsys@dima=\dimexpr\cogsys@dima*\cogsys@dimb/\cogsys@algsumn\relax
+    \fi
+    \ifdim\cogsys@dima<\z@ \cogsys@dima=\z@ \fi
+    % the smallest room over the slides of the frame
+    \edef\cogsys@algrid{\beamer@framestartpage-\the\cogsys@algi}%
+    \ifcsname cogsys@algmin@\cogsys@algrid\endcsname
+      \ifnum\c@page>\beamer@framestartpage\relax
+        \ifdim\csname cogsys@algmin@\cogsys@algrid\endcsname<\cogsys@dima
+          \cogsys@dima=\csname cogsys@algmin@\cogsys@algrid\endcsname\relax
+        \fi
+      \fi
+    \else
+      \xdef\cogsys@algids{\cogsys@algids,\cogsys@algrid}%
+    \fi
+    \expandafter\xdef\csname cogsys@algmin@\cogsys@algrid\endcsname{%
+      \the\cogsys@dima}%
+    \immediate\write\@auxout{\string\cogsys@algroom
+      {\cogsys@algrid}{\the\cogsys@dima}}%
+  \fi}
+% sum up the algorithms with the same column key
+\def\cogsys@algsum{%
+  \ifnum\cogsys@algj<\c@cogsys@alginslide
+    \advance\cogsys@algj\@ne
+    \edef\cogsys@tmp{\csname cogsys@alg@\the\cogsys@algj\endcsname}%
+    \ifx\cogsys@tmp\@empty\else
+      \expandafter\cogsys@algget\cogsys@tmp
+      \ifx\cogsys@algk\cogsys@algkey
+        \advance\cogsys@algsumh\cogsys@algh\relax
+        \advance\cogsys@algsumn\cogsys@algn\relax
+      \fi
+    \fi
+    \expandafter\cogsys@algsum
+  \fi}
+% compare with the previous run
+\def\cogsys@algids{}
+\AtEndDocument{%
+  \@for\cogsys@tmp:=\cogsys@algids\do{%
+    \ifx\cogsys@tmp\@empty\else
+      \ifcsname cogsys@algroom@\cogsys@tmp\endcsname
+        \cogsys@dimb=\dimexpr\csname cogsys@algroom@\cogsys@tmp\endcsname
+          -\csname cogsys@algmin@\cogsys@tmp\endcsname\relax
+        \ifdim\cogsys@dimb<\z@ \cogsys@dimb=-\cogsys@dimb \fi
+        \ifdim\cogsys@dimb>0.01pt \global\cogsys@algreruntrue \fi
+      \else
+        \global\cogsys@algreruntrue
+      \fi
+    \fi}%
+  \ifcogsys@algrerun
+    \PackageWarningNoLine{beamerthemecogsys}{The room for algorithms has
+      changed.\MessageBreak Rerun to get their sizes right}%
+  \fi}
+
+% Columns: the natural height of every column, keyed <group>-<column>,
+% groups counted per slide. \cogsys@colkey is the column a block sits in
+% (F: the frame body).
+\def\cogsys@colkey{F}
+\def\cogsys@colgrp{}
+\let\cogsys@mpcolumn\relax
+\newif\ifcogsys@nextcol % the next minipage is a column
+\newcount\cogsys@colgroups
+\AddToHook{env/beamer@framepauses/begin}{\global\cogsys@colgroups=\z@}
+\AddToHook{env/columns/begin}{%
+  \global\advance\cogsys@colgroups\@ne
+  \edef\cogsys@colgrp{\the\cogsys@colgroups}%
+  \expandafter\xdef\csname cogsys@colmax@\cogsys@colgrp\endcsname{0pt}%
+  \expandafter\xdef\csname cogsys@colcnt@\cogsys@colgrp\endcsname{0}%
+  \cogsys@nextcoltrue}
+\AddToHook{env/minipage/begin}{%
+  \ifcogsys@nextcol
+    \cogsys@nextcolfalse % minipages inside the column are no columns
+    \expandafter\xdef\csname cogsys@colcnt@\cogsys@colgrp\endcsname{%
+      \the\numexpr\csname cogsys@colcnt@\cogsys@colgrp\endcsname+1}%
+    \edef\cogsys@mpcolumn{\cogsys@colgrp-%
+      \csname cogsys@colcnt@\cogsys@colgrp\endcsname}%
+    \let\cogsys@colkey\cogsys@mpcolumn
+  \else
+    \let\cogsys@mpcolumn\relax
+  \fi}
+% \@tempboxa holds the column right before it is placed
+\patchcmd\endminipage{\egroup\expandafter\@iiiparbox}%
+  {\egroup\cogsys@colmeasure\expandafter\@iiiparbox}{}%
+  {\PackageWarningNoLine{beamerthemecogsys}{Could not patch minipage;
+    algorithms in columns may get too small}}
+\def\cogsys@colmeasure{%
+  \ifx\cogsys@mpcolumn\relax\else
+    % columns opening the slide: the highest first box of the columns,
+    % measured from the baseline of the row (see Relaxed title gap)
+    \ifcogsys@colsatbodytop
+      \cogsys@firstbox\@tempboxa
+      \ifdim\cogsys@relaxoffset>-\maxdimen
+        \begingroup
+          \setbox\z@\vtop{\unvcopy\@tempboxa}%
+          \dimen@=\dimexpr\cogsys@relaxoffset-\ht\z@\relax
+          \ifdim\dimen@<\cogsys@colinktop \global\cogsys@colinktop=\dimen@ \fi
+        \endgroup
+      \fi
+    \fi
+    \cogsys@dima=\dimexpr\ht\@tempboxa+\dp\@tempboxa\relax
+    \expandafter\xdef\csname cogsys@colht@\cogsys@mpcolumn\endcsname{%
+      \the\cogsys@dima}%
+    \ifdim\cogsys@dima>\csname cogsys@colmax@\cogsys@colgrp\endcsname\relax
+      \expandafter\xdef\csname cogsys@colmax@\cogsys@colgrp\endcsname{%
+        \the\cogsys@dima}%
+    \fi
+  \fi}
+
+%% ---------------------------------------------------------------------------
+%% Language: language=en|ger
+%% ---------------------------------------------------------------------------
+% Switches the default labels of the theme (lecture, essential, excursus),
+% the theorem tags (THM -> SATZ, EX -> BSP, ...) and, without babel or
+% polyglossia, the LaTeX names (Figure, Table, Proof, ...). All names are
+% hardcoded here, no dictionaries are loaded. With babel or polyglossia
+% loaded, the LaTeX names follow the document language.
+% Labels set with an option, own \cogsystheoremtag values and own
+% \renewcommand\figurename etc. are kept.
+\def\cogsys@ger{ger}
+\newif\ifcogsys@langpkg   % babel or polyglossia loaded
+\newif\ifcogsys@indoc
+% \cogsys@ifsame{<macro>}{<text>}{<true>}{<false>}
+\def\cogsys@ifsame#1#2{%
+  \edef\cogsys@lang@a{\detokenize\expandafter{#1}}%
+  \edef\cogsys@lang@b{\detokenize{#2}}%
+  \ifx\cogsys@lang@a\cogsys@lang@b
+    \expandafter\@firstoftwo\else\expandafter\@secondoftwo\fi}
+% \cogsys@langname{<label>}{<en>}{<ger>}: unless set as an option
+\def\cogsys@langname#1#2#3{%
+  \@ifundefined{cogsys@#1name@set}{%
+    \ifx\cogsys@language\cogsys@ger
+      \@namedef{cogsys@#1name}{#3}\else\@namedef{cogsys@#1name}{#2}\fi}{}}
+% \cogsys@langswap{<csname>}{<en>}{<ger>}: only if it holds the value of
+% the other language, so values changed by the user stay
+\def\cogsys@langswap#1#2#3{%
+  \ifx\cogsys@language\cogsys@ger
+    \expandafter\cogsys@ifsame\csname#1\endcsname{#2}{\@namedef{#1}{#3}}{}%
+  \else
+    \expandafter\cogsys@ifsame\csname#1\endcsname{#3}{\@namedef{#1}{#2}}{}%
+  \fi}
+\def\cogsys@langtheme{%
+  \cogsys@langname{lecture}{Lecture}{Vorlesung}%
+  \cogsys@langname{essential}{Essential}{Wichtig}%
+  \cogsys@langname{excursus}{Excursus}{Exkurs}%
+  \cogsys@langswap{cogsys@tag@theorem}{THM}{SATZ}%
+  \cogsys@langswap{cogsys@tag@corollary}{COR}{FOLG}%
+  \cogsys@langswap{cogsys@tag@fact}{FACT}{FAKT}%
+  \cogsys@langswap{cogsys@tag@solution}{SOL}{L\"OS}%
+  \cogsys@langswap{cogsys@tag@example}{EX}{BSP}%
+  \cogsys@langswap{cogsys@tag@examples}{EX}{BSP}}
+\def\cogsys@langkernel{%
+  \ifcogsys@langpkg\else
+    % English values as defined by beamer and amsthm
+    \cogsys@langswap{figurename}{\translate{Figure}}{Abbildung}%
+    \cogsys@langswap{tablename}{\translate{Table}}{Tabelle}%
+    \cogsys@langswap{proofname}{Proof}{Beweis}%
+    \cogsys@langswap{refname}{\translate{References}}{Literatur}%
+    \cogsys@langswap{bibname}{\translate{Bibliography}}{Literaturverzeichnis}%
+    \cogsys@langswap{contentsname}{\translate{Contents}}{Inhaltsverzeichnis}%
+  \fi}
+\def\cogsys@applylanguage{%
+  \cogsys@langtheme
+  \ifcogsys@indoc\cogsys@langkernel\fi}
+\AtBeginDocument{%
+  \@ifpackageloaded{babel}{\cogsys@langpkgtrue}{}%
+  \@ifpackageloaded{polyglossia}{\cogsys@langpkgtrue}{}%
+  \cogsys@indoctrue
+  \cogsys@langkernel}
+\cogsys@applylanguage
+
+\endinput
