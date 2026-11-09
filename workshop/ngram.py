@@ -5,7 +5,7 @@ from collections import (
     Counter,
     defaultdict
 )
-from utils import (
+from workshop.utils import (
     BOS,
     EOS,
     UNK,
