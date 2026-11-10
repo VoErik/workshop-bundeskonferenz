@@ -28,6 +28,21 @@ from transformers import logging as hf_logging
 hf_logging.set_verbosity_error()  # versteckt transformers-Warnungen, Errors bleiben
 # sichtbar. Relevant für Qwen3.5
 
+SMOL_LM2_BASE = {
+    "s": "HuggingFaceTB/SmolLM2-135M",
+    "m": "HuggingFaceTB/SmolLM2-360M",
+    "l": "HuggingFaceTB/SmolLM2-1.7B"
+}
+
+SMOL_LM2_INSTRUCT = {
+    "s": "HuggingFaceTB/SmolLM2-135M-Instruct",
+    "m": "HuggingFaceTB/SmolLM2-360M-Instruct",
+    "l": "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+}
+
+MODELL_1 = SMOL_LM2_BASE["l"]
+MODELL_2 = SMOL_LM2_INSTRUCT["l"]
+
 def _convert_prompt(prompt: str) -> str:
     if not isinstance(prompt, str):
         try:
@@ -171,7 +186,7 @@ class Sprachmodell:
         prompt: str,
         *,
         gedaechtnis: Optional[Gedaechtnis] = None,
-        max_tokens: int = 512,
+        max_tokens: int = 64,
         stream: bool = True,
         temperature: float = 0.0,
         top_p: float = 1.0
@@ -191,7 +206,7 @@ class Sprachmodell:
         prompt: str,
         *,
         gedaechtnis: Optional[Gedaechtnis] = None,
-        max_tokens: int = 512,
+        max_tokens: int = 64,
         stream: bool = True,
         temperature: float = 0.0,
         top_p: float = 1.0
