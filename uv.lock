@@ -2366,25 +2366,33 @@ wheels = [
 [[package]]
 name = "workshop-bundeskonferenz"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "circuitsvis" },
-    { name = "ipykernel" },
     { name = "ipywidgets" },
     { name = "matplotlib" },
     { name = "peft" },
+    { name = "rich" },
     { name = "transformers" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "ipykernel" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "circuitsvis", specifier = ">=1.43.3" },
-    { name = "ipykernel", specifier = ">=7.3.0" },
-    { name = "ipywidgets", specifier = ">=8.1.9" },
-    { name = "matplotlib", specifier = ">=3.11.2" },
+    { name = "ipywidgets" },
+    { name = "matplotlib" },
     { name = "peft", specifier = ">=0.21.2" },
+    { name = "rich" },
     { name = "transformers", specifier = ">=5.22.2" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ipykernel", specifier = ">=7.3.0" }]
 
 [[package]]
 name = "zipp"
