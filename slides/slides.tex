@@ -43,19 +43,185 @@
     \tableofcontents
 \end{frame}
 
+\begin{frame}[label=personal]{Über Uns}
+    % TODO: Andere Links? Website, Social Media?
+    \small
+    \begin{columns}[onlytextwidth,T]
+        \column{.45\textwidth}
+        \includegraphics[width=.5\textwidth]{assets/erik.jpeg}
+
+        \urllink{mailto:erik.voigt@uni-bamberg.de}{erik.voigt@uni-bamberg.de}
+
+        \column{.46\textwidth}
+        \includegraphics[width=.5\textwidth]{assets/johannes.jpg}
+
+        \urllink{mailto:johannes.langer@uni-bamberg.de}{johannes.langer@uni-bamberg.de}
+    \end{columns}
+
+    \bigskip
+    Wissenschaftliche Mitarbeiter am Lehrstuhl Kognitive Systeme der Universität Bamberg, Forschung und Lehre im Bereich KI und maschinelles Lernen
+\end{frame}
+
 %%%%%%%%%%%%%%%%% Was Ist Natürliche Sprachverarbeitung? %%%%%%%%%%%%%%%%%
 \section{Natürliche Sprachverarbeitung: Grundlagen}
 
 \begin{frame}{Natürliche Sprachverarbeitung}
+    \begin{columns}[onlytextwidth,c]
+        \column{.5\textwidth}
+        \begin{itemize}
+            \item Teilbereich der Künstlichen Intelligenz
+                \begin{itemize}
+                    \item Wie können Computer mit natürlicher (d.h. menschlicher) Sprache umgehen?
+                    \item Wie können relevante Informationen aus Texten extrahiert und verarbeitet werden?
+                \end{itemize}
 
+                \medskip
+            \item Wichtigste Herausforderung: Ambiguität, z.B.
+                \begin{itemize}
+                    \item syntaktisch
+                    \item lexikalisch
+                    \item kontextuell
+                    \item \dots
+                \end{itemize}
+        \end{itemize}
+
+        \column{.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{assets/ai-venn.pdf}
+    \end{columns}
 \end{frame}
 
-\begin{frame}{Maschinelles Lernen}
+\begin{frame}{Natürliche Sprachverarbeitung}{Historischer Ansatz: Eliza \frameparencite{weizenbaumELIZAComputerProgram1966}}
+    \begin{columns}[onlytextwidth,c]
+        \column{.55\textwidth} \footnotesize \vspace{8pt}
+        \begin{itemize}
+            \item Textbasierte Simulation eines Roger'schen Psychotherapeuten
+            \item Wird als erster \enquote{Chatbot} bezeichnet
+            \item Einfaches Programm, dass Regeln und Vorlagen nutzt, die von Expert:innen entworfen wurden
+            \item Die Eingabe wird in Schlüsselwörter zerlegt, die bestimmte Regeln auslösen
+            \item Die Antworten werden aus ebendiesen, bzw. verknüpften Regeln generiert
+            \item Demo: \urllink{https://www.masswerk.at/eliza/}{https://www.masswerk.at/eliza/}
+        \end{itemize}
 
+        \column{.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{assets/eliza-flowchart.pdf}
+    \end{columns}
+    % \framebib{weizenbaumELIZAComputerProgram1966}
+\end{frame}
+
+\begin{frame}{Natürliche Sprachverarbeitung}{Zeitstrahl}
+    \footnotesize
+    \begin{itemize}
+        \item Regelbasiert: Brauchen keine Daten, nutzen Expertenwissen, können Verhalten garantieren
+        \item Statistisch: Benötigen Daten, sind dort anwendbar, wo komplexe Regeln schwer zu formulieren/finden sind, machen manchmal Fehler
+    \end{itemize}
+
+    \vspace{-10pt}\centering
+    \includegraphics[width=.8\textwidth]{assets/timeline.pdf}
+
+    \framebib{kochmarGettingStartedNatural2022}
+\end{frame}
+
+\begin{frame}{Maschinelles Lernen}{Definition}
+    \begin{definition}[Maschinelles Lernen]
+        Ein Computerprogramm \textbf{lernt} aus Erfahrung $E$ im Bezug auf Aufgaben $T$ und Leistungsmaß $P$, wenn dessen Leistung in Aufgaben $T$, gemessen durch $P$, mit Erfahrung $E$ steigt \frameparencite{mitchell97a}.
+    \end{definition}
+
+    \footnotesize
+    \begin{description}
+        \item[Erfahrung] Daten repräsentiert als Mengen von Attributen (z.B. demografische Daten und gesundheitliche Geschichte); Bilder; Spielzüge; Beobachtungen (z.B. Folge von Ereignissen, oder auch Wörtern\dots)
+        \item[Aufgabe] Beispielsweise Klassifikation (hohes/mittleres/geringes Krankheitsrisiko); Objekterkennung; Schach spielen; nächstes Ereignis/Wort vorhersagen
+        \item[Leistungsmaß] Üblicherweise eine Form von \emph{Genauigkeit} (Prozentsatz der korrekten Schätzungen auf \emph{unbekannten} Daten), aber auch Interpretierbarkeit und \emph{Anwendbarkeit} für Menschen
+    \end{description}
+\end{frame}
+
+\begin{frame}{Maschinelles Lernen}{Anwendungsfelder}
+    \begin{itemize}
+        \item Großer praktischer Nutzen in vielen verschiedenen Bereichen
+        \item Daten-Mining: Große Datenbanken enthalten häufig wertvolle implizite Regelmäßigkeiten/Muster, die automatisch entdeckt werden können (Ergebnisse von medizinischen Behandlungen, Vorzüge von Kund:innen)
+        \item Komplexe Domänen, wo Menschen das nötige Wissen entweder nicht haben, oder nicht formulieren können, um effiziente Algorithmen zu entwickeln (z.B. Gesichtserkennung auf Bildern)
+        \item Domänen, wo sich das Programm dynamisch an sich ändernde Bedingungen anpassen muss (z.B. Fertigungsprozesse unter sich ändernden Materialvorräten kontrollieren)
+        \item Autonome Systeme (Roboter, selbstfahrende Autos)
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{Neuronale Netze}
+    \begin{itemize}
+        \item Neuronale Netze sind nur einer von vielen verschiedenen Algorithmen für maschinelles Lernen
+        \item Sie sind differenzierbare Funktionen mit (vielen) variablen (\emph{lernbaren}) Parametern, die Anhand einer Fehlerfunktion (siehe \emph{Leistungsmaß} der Definition) \emph{optimiert} werden.
+        \item Sie bestehen häufig aus mehreren \emph{Schichten}, wobei eine Schicht einer differenzierbaren Teilfunktion entspricht ($\rightarrow$ Kettenregel)
+        \item Neuronale Netze arbeiten vollständig auf reellwertigen Ein- und Ausgaben
+        \item Viele Schichten lassen sich als Matrixmultiplikationen repräsentieren, wodurch sie auf Grafikprozessoren sehr schnell berechnet werden können
+    \end{itemize}
+\end{frame}
 
+\begin{frame}{Neuronale Netze}{Beispiel}
+    \begin{columns}[onlytextwidth,c]
+        \column{.6\textwidth}
+        \centering
+        \begin{tikzpicture}[
+                x=2.6cm, y=1.15cm,
+                neuron/.style={circle, draw=cogsysink, line width=0.6pt, minimum size=0.95cm, inner sep=0pt, font=\small},
+                edge/.style={-latex, draw=cogsysgrey777, line width=0.5pt},
+                w/.style={font=\scriptsize, fill=white, inner sep=1pt},
+                wpos/.style={text=ubblue},
+                wneg/.style={text=ubred},
+            ]
+            % Neuronen (Ausgabe des Neurons steht im Kreis)
+            \node[neuron, fill=ubblue!25]      (x1) at (0,  0.75) {$1{,}0$};
+            \node[neuron, fill=ubblue!25]      (x2) at (0, -0.75) {$0{,}5$};
+            \node[neuron, fill=cogsysexcursus] (h1) at (1,  1.5)  {$0{,}6$};
+            \node[neuron, fill=cogsysexcursus] (h2) at (1,  0)    {$0{,}7$};
+            \node[neuron, fill=cogsysexcursus] (h3) at (1, -1.5)  {$0{,}0$};
+            \node[neuron, fill=ubgreen!40]     (y)  at (2,  0)    {$1{,}0$};
+
+            % Namen der Neuronen
+            \begin{scope}[font=\scriptsize, text=cogsysgrey555]
+                \node[left=2pt]  at (x1.west) {$x_1$};
+                \node[left=2pt]  at (x2.west) {$x_2$};
+                \node[above=1pt] at (h1.north) {$h_1$};
+                \node[above=1pt] at (h2.north) {$h_2$};
+                \node[below=1pt] at (h3.south) {$h_3$};
+                \node[right=2pt] at (y.east)  {$y$};
+            \end{scope}
+
+            % Kanten mit Gewichten: Eingabe -> verdeckte Schicht
+            \draw[edge] (x1) -- node[w, wpos, pos=0.3]  {$0{,}8$}  (h1);
+            \draw[edge] (x1) -- node[w, wpos, pos=0.3]  {$0{,}2$}  (h2);
+            \draw[edge] (x1) -- node[w, wneg, pos=0.75] {$-0{,}5$} (h3);
+            \draw[edge] (x2) -- node[w, wneg, pos=0.75] {$-0{,}4$} (h1);
+            \draw[edge] (x2) -- node[w, wpos, pos=0.3]  {$1{,}0$}  (h2);
+            \draw[edge] (x2) -- node[w, wpos, pos=0.3]  {$0{,}6$}  (h3);
+
+            % Kanten mit Gewichten: verdeckte Schicht -> Ausgabe
+            \draw[edge] (h1) -- node[w, wpos, pos=0.5] {$0{,}5$}  (y);
+            \draw[edge] (h2) -- node[w, wpos, pos=0.5] {$1{,}0$}  (y);
+            \draw[edge] (h3) -- node[w, wneg, pos=0.5] {$-0{,}8$} (y);
+
+            % Schichtbeschriftungen
+            \begin{scope}[font=\scriptsize, text=cogsysgrey555]
+                \node at (0, -2.45) {Eingabe};
+                \node at (1, -2.45) {Verdeckte Schicht (ReLU)};
+                \node at (2, -2.45) {Ausgabe};
+            \end{scope}
+        \end{tikzpicture}
+
+        \column{.38\textwidth}
+        \small
+        Jedes Neuron berechnet die gewichtete Summe seiner Eingaben und wendet eine \emph{Aktivierungsfunktion} an, hier $\operatorname{ReLU}(z) = \max(0, z)$:
+
+        \medskip
+        \footnotesize
+        $h_1 = \max(0,\ 0{,}8 \cdot 1{,}0 - 0{,}4 \cdot 0{,}5) = 0{,}6$\\[2pt]
+        $h_2 = \max(0,\ 0{,}2 \cdot 1{,}0 + 1{,}0 \cdot 0{,}5) = 0{,}7$\\[2pt]
+        $h_3 = \max(0,\ {-0{,}5} \cdot 1{,}0 + 0{,}6 \cdot 0{,}5) = 0$\\[6pt]
+        $y\ \ = 0{,}5 \cdot 0{,}6 + 1{,}0 \cdot 0{,}7 - 0{,}8 \cdot 0 = 1{,}0$
+
+        \medskip
+        \small
+        Die Gewichte sind die \emph{lernbaren Parameter}: Beim Training werden sie so angepasst, dass $y$ dem gewünschten Wert näher kommt.
+    \end{columns}
 \end{frame}
 
 %%%%%%%%%%%%%%%%% Probabilistische Sprachmodelle %%%%%%%%%%%%%%%%%
@@ -82,8 +248,6 @@
         Das \textbf{Vokabular} $V$ ist die Menge der einzigartigen \emph{Token} bei der Sprachmodellierung. Die Größe des Vokabulars $\lvert V\rvert$ beschreibt den \emph{Zustandsraum} des Modells. Token, die nicht im Vokabular enthalten sind, kennt das Modell nicht, und können nicht verarbeitet werden.
     \end{definition}
 
-    % TODO: Wollen wir das drin haben? Ist ja eigentlich ein Mix...
-    % \footnotetext{Wortteile haben sich in der Praxis als die effektivste Tokenebene herausgestellt.}
 \end{frame}
 
 \subsection{N-Gram Modelle}
@@ -176,7 +340,6 @@
 \section{Vektorrepräsentationen}
 
 \begin{frame}{Motivation}
-    % TODO: Die Neuronalen Netze hier erwähnen too soon? Führen ja die neuronalen Sprachmodelle erst später ein...
     \begin{columns}[onlytextwidth,c]
         \column{.6\textwidth}
         \begin{itemize}
@@ -219,9 +382,6 @@
 
     \end{columns}
 \end{frame}
-
-% TODO: Bag-of-Words Ansätze? Sind aber Document-Reps, nicht für Tokens
-% TODO: Oder: Wollen wir auch IR machen, oder bei der Sprachgenerierung bleiben?
 
 \begin{frame}{Embeddings}{One-Hot Vektoren}
     \textbf{Idee:} Die Vektorrepräsentation hat die Größe $\lvert V\rvert$, wobei jedes Element im Vektor einem möglichen Token entspricht. Um ein Token zu repräsentieren, wird das entsprechende Element auf 1 gesetzt; alle anderen Elemente bleiben 0.
@@ -307,8 +467,18 @@
 \section{Neuronale Sprachmodelle}
 
 \begin{frame}{Definition}
-    % TODO: Replay Probabilistisches Sprachmodell
-    \begin{definition}[Neuronales Sprachmodell]
+    \setcounter{section}{2}
+    \begin{definition}[Probabilistisches Sprachmodell] \footnotesize
+        Ein \textbf{statistisches} oder \textbf{probabilistisches Sprachmodell} kann durch die \emph{bedingte Wahrscheinlichkeit} des nächsten Wortes, gegeben aller vorherigen Worte repräsentiert werden. Dann ist die Wahrscheinlichkeit einer Wortfolge
+        \begin{equation*}
+            \hat{P}(w_1, \dots, w_T)=\prod_{i=1}^{T}\hat{P}(w_i~\vert~w_1,\dots,w_{i-1}).
+        \end{equation*}
+    \end{definition}
+    \vspace{-8 pt}
+
+    \setcounter{section}{4}
+    \setcounter{theorem}{0}
+    \begin{definition}[Neuronales Sprachmodell] \footnotesize
         $f$ sei ein neuronales Netz, parametrisiert durch $\theta$, und $w_1^T$ eine Wortfolge der Länge $T$. Dann ist
         \begin{equation*}
             \hat{P}(w_T~\vert~w_1^{T-1})=f(w_1^{T-1},\theta)
@@ -362,8 +532,7 @@
         \column{.6\textwidth} \small
         \begin{itemize}
             \item Die Abbildung rechts zeigt einen \enquote{\emph{Decoder-Only-Transformer}}, die Standard-Architektur für moderne große Sprachmodelle
-                % TODO: "Additiver Faktor", kann man das so sagen? :D
-            \item \enquote{+ Position}: Transformer nutzen keine Rekurrenz (d.h. weitergabe von vorherigen Netzwerkläufen), und die reinen Matrizenmultiplikationen aus den Schichten des Netzwerks sind invariant zur Reihenfolge der Tokens. Deshalb benötigen die Token-Embeddings einen additiven Faktor, aus dem die Reihenfolge der Tokens nachvollziehbar wird.
+            \item \enquote{+ Position}: Transformer nutzen keine Rekurrenz (d.h. weitergabe von vorherigen Netzwerkläufen), und die reinen Matrizenmultiplikationen aus den Schichten des Netzwerks sind invariant zur Reihenfolge der Tokens. Deshalb benötigen die Token-Embeddings eine additive Komponente, aus der die Reihenfolge der Tokens nachvollziehbar wird.
             \item Am Ende wird eine Softmax-Verteilung über das Vokabular aufgespannt. \\
                 $\rightarrow$ Die Auswahl des nächsten Tokens entspricht also effektiv einer \emph{Klassifikation}.
         \end{itemize}
@@ -450,10 +619,11 @@
 \end{frame}
 
 \begin{frame}{Dialogsysteme}{Vom Sprachmodell zum Chat-Interface}
+    \small
     \begin{itemize}
-        \item \textbf{Antworten auf Fragen:} \enspace
-        \item \textbf{Langer Kontext:}
-        \item \textbf{Geschwindigkeit:}
+        \item \textbf{Antworten auf Fragen:} \enspace Anstelle von \enquote{frei zu assoziieren}, sollte das Modell tatsächlich auf Fragen antworten können
+        \item \textbf{Langer Kontext:} \enspace Das Modell sollte in der Lage sein, lange Gesprächsverläufe als Kontext für die Generierung von Antworten zu Rate zu ziehen. Nutzer:innen sollten das Modell nicht alle drei Nachrichten an wichtige Informationen \enquote{erinnern} müssen
+        \item \textbf{Geschwindigkeit:} \enspace Das Modell sollte möglichst schnell Antworten geben können. Da Grafikprozessoren (GPUs) explizit dafür gebaut sind, Matrixmultiplikationen zu rechnen, können neuronale Sprachmodelle gut mit Rechenleistung skalieren
         \item[$\rightarrow$] Erst mit Transformern konnten Sprachmodelle so mächtig werden dass Anwendungen wie ChatGPT möglich wurden
     \end{itemize}
 \end{frame}
@@ -462,12 +632,71 @@
 \section[noframe]{Abschluss}
 
 \begin{frame}{Zusammenfassung}
+    \centering
+    \vspace*{-1.5mm}
+    \begin{tikzpicture}[
+            x=\textwidth/4+0.75mm, % Kastenbreite + 3 mm Abstand
+            % Kästen im Stil der Theme-Blöcke: eckig, dünne Linie, schwarzer Reiter auf der Oberkante
+            card/.style={draw=cogsysink, line width=0.25mm, fill=white, text width=\textwidth/4-6.25mm,
+                inner xsep=2mm, inner ysep=2.5mm, anchor=north, font=\scriptsize,
+            execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}},
+            tab/.style={fill=cogsysink, text=cogsyspaper, inner xsep=1.5mm, inner ysep=1.4mm, anchor=west,
+            font=\usebeamerfont{block title}},
+            transition/.style={-latex, draw=cogsysgrey777, line width=0.8pt},
+        ]
+        % Stationen: Index / Reiter / Punkte / Überleitung zur nächsten Station
+        % (\par ist in der \foreach-Liste nicht erlaubt, daher \\[0.8mm])
+        % / Überleitung zur nächsten Station
+        \foreach \i/\title/\body/\lim in {
+            0/{§1 Grundlagen}/{%
+                Regelbasiert (ELIZA)\\ $\rightarrow$ statistisch\\[0.8mm]
+                Maschinelles Lernen: Leistung steigt mit Erfahrung\\[0.8mm]
+            Neuronale Netze: differenzierbare Funktionen mit lernbaren Gewichten}/%
+            {\textbf{Grenze:} Regeln skalieren nicht auf die Vielfalt natürlicher Sprache},
+            1/{§2 N-Gramme}/{%
+                Sprache als Wahrscheinlichkeit: \mbox{$\hat{P}(w_i \mid w_1,\dots,w_{i-1})$}\\[0.8mm]
+                Markov-Annahme: nur die letzten $N-1$ Token zählen\\[0.8mm]
+            Training durch Zählen, Generierung durch \enquote{Würfeln}}/%
+            {\textbf{Grenze:} $\lvert V\rvert^N$ wächst exponentiell, Gedächtnis nur $N-1$ Token},
+            2/{§3 Embeddings}/{%
+                Token werden zu reellwertigen Vektoren\\[0.8mm]
+                One-Hot: simpel, aber riesig und ohne Semantik\\[0.8mm]
+            Word2Vec: ähnliche Bedeutung $\rightarrow$ ähnliche Vektoren}/%
+            {\textbf{Grenze:} Ein Wortvektor allein kennt seinen Kontext nicht},
+            3/{§4 Transformer}/{%
+                Attention: Kontext nach \emph{Relevanz} statt Position\\[0.8mm]
+                Transformer: parallel auf GPUs, skalierbar\\[0.8mm]
+            Autoregression: nächstes Token wählen\\ = Klassifikation}/%
+            {\textbf{Ergebnis:} Grundlage für Chat-Modelle wie ChatGPT}%
+        } {
+            % feste Höhe, damit alle Kästen gleich groß sind; die Überleitung sitzt unten bündig
+            \node[card] (c\i) at (\i, 0)
+            {
+                \begin{minipage}[t][3.95cm][t]{\linewidth}\raggedright
+                    \vspace*{1mm}\body\par
+                    \vfill
+                    {\color{cogsysrule}\rule{\linewidth}{0.25pt}}\par\vspace{0.8mm}
+                    \lim
+            \end{minipage}};
+            \node[tab] at ([xshift=2.5mm]c\i.north west) {\title};
+        }
 
+        % Übergänge zwischen den Stationen
+        \foreach \a/\b in {0/1, 1/2, 2/3} {
+            \draw[transition] (c\a.east) -- (c\b.west);
+        }
+
+        % Kernaussage: wie ein alertblock (dickere Linie)
+        \node[draw=cogsysink, line width=0.6mm, fill=white, text width=\textwidth-5.6mm,
+            inner xsep=2.5mm, inner ysep=2.5mm, anchor=north, align=left, font=\footnotesize,
+        execute at begin node={\hyphenpenalty=10000}] (key)
+        at (1.5, -4.8)
+        {Ein Sprachmodell sagt immer nur das \emph{nächste Token} vorher.};
+        \node[tab] at ([xshift=2.5mm]key.north west) {Kernidee};
+    \end{tikzpicture}
 \end{frame}
 
-\begin{frame}{Über Uns}
-
-\end{frame}
+\againframe{personal}
 
 %%%%%%%%%%%%%%%%% Backup Slides %%%%%%%%%%%%%%%%%
 \section*{Backup Slides}
