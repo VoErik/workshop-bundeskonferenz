@@ -10,8 +10,8 @@ from workshop.utils import (
     EOS,
     UNK,
     Level,
-    tokenize,
-    detokenize,
+    tokenisiere,
+    detokeninisiere,
     _join_piece
 )
 
@@ -20,10 +20,10 @@ def _char_label(ch: str) -> str:
 
 class NGram:
     """
-    Simple N-Gram model that works for characters or words.
+    Einfaches wort- oder zeichenlevel N-Gramm Modell.
 
-    :param n: number of n-gram to use
-    :param level: level of n-gram to use (word or char)
+    :param n: Ordnung des N-Gramm Modells
+    :param level: Wort (word) oder Zeichen (char) N-Gramm
     """
     def __init__(
             self,
@@ -57,16 +57,16 @@ class NGram:
     def fit(
             self,
             docs: list[list[str]],
-            vocabulary: list[str]
+            vokabular: list[str]
     ) -> "NGram":
         """
-        Fits the model to the data.
+        Trainiert das Modell auf den Daten.
 
-        :param docs: list of lists of tokens
-        :param vocabulary: the allowed vocabulary
+        :param docs: Liste der tokenisierten Trainingsbeispiele
+        :param vokabular: Vokabular
         """
-        self.vocab = vocabulary
-        self.vocab_set = set(vocabulary)
+        self.vocab = vokabular
+        self.vocab_set = set(vokabular)
         # counts[order-1][context][next_token]; lower orders are kept for backoff and the matrix
         self.counts = [defaultdict(Counter) for _ in range(self.n)]
 
@@ -83,15 +83,15 @@ class NGram:
             self,
             history: list[str],
             rng: random.Random,
-            temperature: float
+            temperatur: float
     ) -> str:
         """
-        Samples  the  next token.
+        Samplet das naechste Token.
 
-        :param history: list of tokens
-        :param rng: random seed
-        :param temperature: temperature to smooth out the sample distribution
-        :returns: next token
+        :param history: Liste der Tokens.
+        :param rng: RNG
+        :param temperatur: Glaettungsfaktor fuer die Samplingdistribution.
+        :returns: Naechstes Token
         """
         # back off to shorter contexts if the full one was never seen
         for order in range(self.n, 0, -1):
@@ -99,10 +99,10 @@ class NGram:
             if dist:
                 break
         choices = [t for t in dist if t != UNK] or list(dist)
-        weights = [dist[t] ** (1.0 / temperature) for t in choices]
+        weights = [dist[t] ** (1.0 / temperatur) for t in choices]
         return rng.choices(choices, weights=weights)[0]
 
-    def generate(
+    def generiere(
             self,
             length: int=200,
             prompt: str="",
@@ -113,20 +113,20 @@ class NGram:
             delay: float = 0.05
     ) -> str:
         """
-        Repeatedly samples the distribution to generate new tokens.
+        Samplet wiederholt aus der gelernten Distribution um neue Token zu generieren.
 
-        :param length: how many new tokens are generated
-        :param prompt: starting sequence
-        :param temperature: factor to smooth out the sampling distribution
-        :param seed: random seed
-        :param stream: whether to stream the result (defaults to True)
-        :param delay: delay between repetitions when streaming
+        :param laenge: Wie viele neue Tokens generiert werden.
+        :param prompt: Startsequenz
+        :param temperatur: Glaettungsfaktor fuer die Samplingdistribution.
+        :param seed: RNG
+        :param stream: Ob die neuen Tokens gestreamt werden sollen (Default = True)
+        :param delay: Kurzes delay zwischen neuen Tokens.
 
-        :return: the newly generated tokens
+        :return: Die neu generierten Tokens
         """
         rng = random.Random(seed)
-        history = tokenize(prompt, self.level) if isinstance(prompt, str) else list(prompt)
-        text = detokenize(history, self.level)
+        history = tokenisiere(prompt, self.level) if isinstance(prompt, str) else list(prompt)
+        text = detokeninisiere(history, self.level)
         if stream:
             print(text, end="", flush=True)
         for _ in range(length):
@@ -145,23 +145,23 @@ class NGram:
     # From here on out its just pretty visualisations and convenience.
     # Nothing here is "essential" for the N-Gram to work.
 
-    def association_matrix(
+    def assoziations_matrix(
             self,
             chars: str | list[str] | None = None,
-            normalize: bool = True,
-            order: int | None = None,
+            normalisiere: bool = True,
+            ordnung: int | None = None,
             top: int | None = 40,
     ) -> tuple[list[str], list[str], list[list[float]]]:
-        """Rows = contexts (order-1 chars), columns = next char.
+        """Reihen = Kontexte (ordnung-1 Zeichen), Spalten = naechstes Token.
 
-        order: 2 = bigram, 3 = trigram, ... (defaults to the model's n)
-        top: only show the `top` most frequent contexts (None = all observed ones)
+        ordnung: 2 = bigram, 3 = trigram, ... (Default = Ordnung des Modells)
+        top: Zeige nur die `top` haeufigsten Kontexte (None = alle)
         """
-        order = order or self.n
+        order = ordnung or self.n
         if self.level != "char":
-            raise ValueError("association matrix is only available for char-level models")
+            raise ValueError("Die Assoziationsmatrix ist nur fuer zeichen-level N-Gramme.")
         if not 2 <= order <= self.n:
-            raise ValueError(f"order must be between 2 and n={self.n}")
+            raise ValueError(f"Ordnung muss zwischen 2 und n={self.n} sein.")
 
         cols = list(chars) if chars is not None else [t for t in self.vocab if t not in (BOS, EOS, UNK)]
         allowed = set(cols)
@@ -176,23 +176,30 @@ class NGram:
         for ctx in contexts:
             counter = table[ctx]
             row = [counter[b] for b in cols]
-            if normalize:
+            if normalisiere:
                 total = sum(counter.values())
                 row = [x / total for x in row]
             rows.append(row)
         row_labels = ["".join(_char_label(c) for c in ctx) for ctx in contexts]
         return row_labels, cols, rows
 
-    def show_association_matrix(
+    def zeige_assoziations_matrix(
             self,
             chars: str | list[str] | None = None,
-            normalize: bool = True,
-            order: int | None = None,
+            normalisiere: bool = True,
+            ordnung: int | None = None,
             top: int | None = 40,
-            show_values: bool = False,
+            zeige_werte: bool = False,
             gamma: float = 0.5,
     ) -> None:
-        row_labels, cols, rows = self.association_matrix(chars, normalize, order, top)
+        """Reihen = Kontexte (ordnung-1 Zeichen), Spalten = naechstes Token.
+        
+        normalisiere: Normalisierung der Zellen - ohne werden rohe Counts angezeigt
+        ordnung: 2 = bigram, 3 = trigram, ... (Default = Ordnung des Modells)
+        top: Zeige nur die `top` haeufigsten Kontexte (None = alle)
+        zeige_werte: Ob Zahlen in den Zellen angezeigt werden.
+        """
+        row_labels, cols, rows = self.assoziations_matrix(chars, normalisiere, ordnung, top)
         col_labels = [_char_label(c) for c in cols]
         peak = max((v for row in rows for v in row), default=0) or 1
         try:
@@ -200,7 +207,7 @@ class NGram:
         except ImportError:
             print(self._matrix_text(row_labels, col_labels, rows, peak, gamma))
             return
-        display(HTML(self._matrix_html(row_labels, col_labels, rows, peak, gamma, normalize, show_values)))
+        display(HTML(self._matrix_html(row_labels, col_labels, rows, peak, gamma, normalisiere, zeige_werte)))
 
     # thank you AI overlord :)
     @staticmethod

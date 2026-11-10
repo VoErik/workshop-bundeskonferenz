@@ -6,25 +6,24 @@ from typing import Literal, get_args
 
 Level = Literal["char", "word"]
 BOS, EOS, UNK = "<bos>", "<eos>", "<unk>"
-WORD_RE = re.compile(r"[A-Za-z]+(?:'[A-Za-z]+)*|[.,!?;:\-']|\n") # get individual words
-CLEAN_RE = re.compile(r"[^A-Za-z\s.,!?;:\-]") # gets letters + .,!?;:- (removes odd special chars and numbers)
+WORD_RE = re.compile(r"[A-Za-z]+(?:'[A-Za-z]+)*|[.,!?;:\-']|\n") # individuelle Worte
+CLEAN_RE = re.compile(r"[^A-Za-z\s.,!?;:\-]") # Buchstaben + .,!?;:- (Entfernt Sonderzeichen und Zahlen)
 NO_SPACE_BEFORE = {".", ",", "!", "?", ";", ":", "-", "'"}
 NO_SPACE_AFTER = {"\n", "-", "'", EOS}
 
 
-def load_data(
-        source: str = "assets/tiny_shakespeare.txt",
+def lade_datensatz(
+        quelle: str = "assets/tiny_shakespeare.txt",
         split: bool = False,
 ) -> str | tuple[str, str]:
     """
-    Loads dataset from a .txt file.
-    TODO: make more general for transformer part? @Johannes
+    Laedt Datensatz aus .txt Datei.
 
-    :param source: location of dataset
-    :param split: whether to split dataset into train and validation
-    :return: train and validation dataset
+    :param source: Speicherort des Datensatzes
+    :param split: Soll der Datensatz in 'Training' und 'Validation' gesplittet werden? Default = False.
+    :return: Datensatz splits
     """
-    with open(source, "r", encoding="utf-8") as f:
+    with open(quelle, "r", encoding="utf-8") as f:
         text = f.read()
 
     if split:
@@ -34,30 +33,31 @@ def load_data(
 
     return text
 
-def to_chunks(text, separator="\n\n"):
+def als_chunks(text, separator="\n\n"):
     return text.split(separator) if separator else [text]
 
-def tokenize(
+def tokenisiere(
         text: str,
         level: Level = "char",
-        lowercase: bool = True
+        kleinschreibung: bool = True
 ) -> list[str]:
-    """Tokenizes text into individual tokens.
+    """Tokenisiert Text.
 
-    :param text: text to tokenize
-    :param level: level of tokens to tokenize
-    :param lowercase: lowercase or not
-    :return: list of individual tokens
+    :param text: Zu tokenisierender Text
+    :param level: Level der Tokenisierung (Wort, Zeichen)
+    :param lowercase: Nur Kleinschreibung? Default = True
+    :return: Liste der individuellen Token
     """
-    assert level in get_args(Level), f"level must be one of {get_args(Level)}"
+    assert level in get_args(Level), f"Level muss eins der folgenden sein: {get_args(Level)}"
     text = CLEAN_RE.sub("", text)
-    if lowercase:
+    if kleinschreibung:
         text = text.lower()
     if level == "char":
         return list(text)
     if level == "word":
         return WORD_RE.findall(text)
 
+# nur intern
 def _join_piece(
         prev: str | None,
         tok: str,
@@ -74,17 +74,17 @@ def _join_piece(
         return tok
     return " " + tok
 
-def detokenize(
+def detokeninisiere(
         tokens: list[str],
         level: Level
 ) -> str:
     """
     Creates string of text from tokens, removing white spaces where appropriate.
 
-    :param tokens: list of tokens
-    :param level: char or word
+    :param tokens: Liste der Tokens
+    :param level: char oder word
 
-    :return: joined string of tokens
+    :return: Zusammengefuegte Liste der Tokens
     """
     out, prev = [], None
     for tok in tokens:
@@ -92,24 +92,25 @@ def detokenize(
         prev = tok
     return "".join(out)
 
-def build_vocabulary(
+def baue_vokabular(
         tokens: list[str]
 ) -> list[str]:
-    """Create sorted vocabulary from tokens and prepends special tokens."""
+    """Erstellt sortiertes Vokabular aus den Tokens mit Sondertokens."""
     counts = Counter(tokens)
     vocab = sorted(t for t, c in counts.items())
     return [BOS, EOS, UNK] + vocab
 
-def prepare_data(
-        dataset: str,
+def bereite_daten_vor(
+        datensatz: str,
         level: str,
         separator: str = "\n\n",
 ):
-    data = load_data(source=dataset)
-    chunks = [tokenize(c, level) for c in to_chunks(text=data, separator=separator) if c.strip()]
-    vocabulary = build_vocabulary([t for doc in chunks for t in doc])
+    data = lade_datensatz(quelle=datensatz)
+    chunks = [tokenisiere(c, level) for c in als_chunks(text=data, separator=separator) if c.strip()]
+    vocabulary = baue_vokabular([t for doc in chunks for t in doc])
     return chunks, vocabulary
 
+# nur intern
 def make_toy_dataset(
         path: str = "assets/toy.txt",
         vocabulary: str | list[str] = "abcde ",
