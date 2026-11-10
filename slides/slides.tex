@@ -307,6 +307,7 @@
 \section{Neuronale Sprachmodelle}
 
 \begin{frame}{Definition}
+    % TODO: Replay Probabilistisches Sprachmodell
     \begin{definition}[Neuronales Sprachmodell]
         $f$ sei ein neuronales Netz, parametrisiert durch $\theta$, und $w_1^T$ eine Wortfolge der Länge $T$. Dann ist
         \begin{equation*}
@@ -344,7 +345,7 @@
         \end{itemize}
 
         \column{.4\textwidth}
-        \begin{excursusblock}{Hashmaps} \footnotesize
+        \begin{excursusblock}{Analogie: Hashmaps} \footnotesize
             Hashmaps, oder Hash-Tabellen, sind eine beliebte Datenstruktur, die flexiblen und äußerst schnellen Zugriff auf ihre gespeicherten Daten bieten (Komplexität $O(1)$).
 
             \medskip
@@ -404,7 +405,7 @@
 
 \subsection{Autoregression}
 
-\begin{frame}[essential]{Sprachgenerierung/Autoregression}
+\begin{frame}[essential]{Autoregression}
     \small
     \textbf{Sprachgenerierung mit neuronalen Sprachmodellen ist Klassifikation.}
     \begin{itemize}
@@ -422,6 +423,20 @@
     \end{definition}
 \end{frame}
 
+\begin{frame}{Sprachgenerierung}{Beispiel}
+    Sprachgenerierung:
+    \begin{itemize}
+        \item Ziehe das nächste Wort aus der Ausgabe (gewichtete Wahrscheinlichkeitsverteilung) des Sprachmodells
+        \item Füge das gezogene Wort iterativ zur Bedingung hinzu
+    \end{itemize}
+
+    \centering
+    \only<1>{\includegraphics[width=\textwidth]{assets/sprachgenerierung1.pdf}}
+    \only<2>{\includegraphics[width=\textwidth]{assets/sprachgenerierung2.pdf}}
+    \only<3>{\includegraphics[width=\textwidth]{assets/sprachgenerierung3.pdf}}
+    \only<4>{\includegraphics[width=\textwidth]{assets/sprachgenerierung4.pdf}}
+\end{frame}
+
 \subsection{Dialogsysteme}
 
 \begin{frame}[c]
@@ -435,7 +450,12 @@
 \end{frame}
 
 \begin{frame}{Dialogsysteme}{Vom Sprachmodell zum Chat-Interface}
-
+    \begin{itemize}
+        \item \textbf{Antworten auf Fragen:} \enspace
+        \item \textbf{Langer Kontext:}
+        \item \textbf{Geschwindigkeit:}
+        \item[$\rightarrow$] Erst mit Transformern konnten Sprachmodelle so mächtig werden dass Anwendungen wie ChatGPT möglich wurden
+    \end{itemize}
 \end{frame}
 
 %%%%%%%%%%%%%%%%% Abschluss %%%%%%%%%%%%%%%%%
