@@ -31,7 +31,7 @@ Alle Materialien dürfen frei verwendet und verändert werden. Wenn Sie sie nutz
 > Voigt, E. & Langer, J. (2026). *Natürliche Sprachverarbeitung mit KI*. Workshop, SMW Bundeskonferenz 2026, Universität Bamberg.
  
 ```bibtex
-@misc{voigt2026sprachverarbeitung,
+@misc{cogsys2026smw,
   author       = {Voigt, Erik and Langer, Johannes},
   title        = {Natürliche Sprachverarbeitung mit KI},
   howpublished = {Workshop, SMW Bundeskonferenz 2026, Universität Bamberg},
