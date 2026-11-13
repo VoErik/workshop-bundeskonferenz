@@ -146,3 +146,11 @@ def make_toy_dataset(
     with open(path, "w", encoding="utf-8") as f:
         f.write(sep.join(tokens))
     return transitions
+
+def colab_ohne_scrollen() -> None:
+    """Hebt in Colab die Höhenbegrenzung der aktuellen Zellausgabe auf."""
+    try:
+        from google.colab import output
+        output.no_vertical_scroll()
+    except ImportError:
+        pass   # lokal in Jupyter: nichts zu tun
