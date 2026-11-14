@@ -24,6 +24,7 @@ from transformers import (
     TextStreamer,
 )
 from transformers import logging as hf_logging
+from workshop.utils import colab_ohne_scrollen
 
 hf_logging.set_verbosity_error()  # versteckt transformers-Warnungen, Errors bleiben
 # sichtbar. Relevant für Qwen3.5
@@ -288,6 +289,7 @@ class Sprachmodell:
         eingabe: str | list[dict[str, str]] | None = None,
         *,
         schicht: int | list[int] | str | None = None,
+        heads: int | list[int] | None = None,
         chat_format: bool = False,
     ) -> None:
         """
@@ -301,12 +303,15 @@ class Sprachmodell:
           (bei Qwen3.5 haben nur manche Schichten echte Attention).
         :param: `chat_format`: Text wie bei `prompt` ins Chat-Template einbetten, d.h. genau
           das anzeigen, was das Modell sieht, bevor es antwortet.
+        :param: `heads`: Index eines Heads oder Liste von Indizes, die angezeigt werden
+          sollen. Standard: alle Heads der Schicht.
  
         Bedienung: Über die kleinen Kacheln fahren bzw. klicken, um einen Head groß
         anzuzeigen. Jede Zeile ist ein Token, das "hinschaut" (Query), jede Spalte ein
         Token, auf das geschaut wird (Key). Fährt man über ein Token unten im Text,
         wird eingefärbt, worauf es schaut.
         """
+        colab_ohne_scrollen()
         if eingabe is None:
             if not self.gedaechtnis:
                 print("Kein Gesprächsverlauf vorhanden - bitte einen Text übergeben.")
@@ -398,12 +403,24 @@ class Sprachmodell:
         for i in auswahl:
             l = schicht_ids[i]
             muster = attentions[i][0].float().cpu().numpy().round(4)  # [heads, T, T]
-            display(Markdown(f"**Schicht {l}** ({muster.shape[0]} Heads)"))
+            n_heads = muster.shape[0]
+            if heads is None:
+                head_ids = list(range(n_heads))
+            else:
+                gewuenschte_heads = [heads] if isinstance(heads, int) else list(heads)
+                head_ids = [h for h in gewuenschte_heads if 0 <= h < n_heads]
+                ungueltig = [h for h in gewuenschte_heads if h not in head_ids]
+                if ungueltig:
+                    print(f"Heads {ungueltig} gibt es nicht. Verfügbar: 0 bis {n_heads - 1}")
+                if not head_ids:
+                    continue
+            muster = muster[head_ids]
+            display(Markdown(f"**Schicht {l}** ({len(head_ids)} von {n_heads} Heads)"))
             display(
                 cv.attention.attention_heads(
                     attention=muster,
                     tokens=tokens,
-                    attention_head_names=[f"L{l}H{h}" for h in range(muster.shape[0])],
+                    attention_head_names=[f"L{l}H{h}" for h in head_ids],
                 )
             )
         return None

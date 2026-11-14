@@ -12,7 +12,8 @@ from workshop.utils import (
     Level,
     tokenisiere,
     detokeninisiere,
-    _join_piece
+    _join_piece,
+    colab_ohne_scrollen
 )
 
 def _char_label(ch: str) -> str:
@@ -199,6 +200,7 @@ class NGram:
         top: Zeige nur die `top` haeufigsten Kontexte (None = alle)
         zeige_werte: Ob Zahlen in den Zellen angezeigt werden.
         """
+        colab_ohne_scrollen()
         row_labels, cols, rows = self.assoziations_matrix(chars, normalisiere, ordnung, top)
         col_labels = [_char_label(c) for c in cols]
         peak = max((v for row in rows for v in row), default=0) or 1
@@ -212,7 +214,7 @@ class NGram:
     # thank you AI overlord :)
     @staticmethod
     def _matrix_html(row_labels, col_labels, rows, peak, gamma, normalize, show_values) -> str:
-        size = 26 if show_values else 18
+        size = 26 if show_values else max(10, min(18, 900 // (len(col_labels) + 2)))
         head_style = ("font-weight:600;text-align:center;padding:0;"
                       f"width:{size}px;height:{size}px;color:inherit;background:none;")
         row_head_style = ("font-weight:600;text-align:right;padding:0 6px;white-space:pre;"
@@ -226,7 +228,7 @@ class NGram:
             return f"{v:.2f}".lstrip("0") if normalize else str(v)
 
         out = [
-            '<div style="overflow:auto;max-height:80vh;">',
+            '<div style="overflow-x:auto;">',
             '<table style="border-collapse:collapse;font-family:monospace;font-size:12px;">',
             f'<tr><th style="{row_head_style}">↓→</th>',
         ]
