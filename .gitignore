@@ -26,3 +26,6 @@ slides/*.bbl
 slides/*.bcf
 slides/*.blg
 slides/*.run.xml
+
+# slides source
+slides/*
