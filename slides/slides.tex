@@ -256,7 +256,7 @@
     In der Praxis ist die Berechnung beliebig langer Token-Sequenzen unmöglich. Ein \emph{N-Gram Sprachmodell} trifft die \emph{Markov-Annahme} $N-1$-ter Ordnung: Die Wahrscheinlichkeit des Tokens $i$ hängt nur von den vorherigen $N-1$ Token ab. $N$ wird auch als \emph{Ordnung} des N-Gram Modells bezeichnet.
 
     \begin{definition}[N-Gram Sprachmodell]
-        Ein \textbf{N-Gram Sprachmodell} ist ein \emph{probabilistisches Sprachmodell} unter der Markov-Annahme $N$-ter Ordnung:
+        Ein \textbf{N-Gram Sprachmodell} ist ein \emph{probabilistisches Sprachmodell} unter der Markov-Annahme $N-1$-ter Ordnung:
         \begin{equation*}
             \hat{P}(w_i~\vert~w_1,\dots,w_{i-1})~\approx~\hat{P}(w_i~\vert~w_{i-(N-1)},\dots,w_{i-1})
         \end{equation*}
